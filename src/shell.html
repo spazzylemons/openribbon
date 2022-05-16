@@ -16,7 +16,7 @@
                 text-align: center;
             }
 
-            .lacking-feature {
+            .error-box {
                 color: var(--error-dark);
                 background-color: var(--error-light);
                 border: 1px solid var(--error-dark);
@@ -36,13 +36,13 @@
     <body>
         <!-- message to show when Javascript is not available -->
         <noscript>
-            <div class="lacking-feature">
+            <div class="error-box">
                 Javascript is required to run the game.
             </div>
         </noscript>
-        <!-- message to show when WebGL is not available -->
-        <div id="nowebgl" class="lacking-feature" hidden>
-            WebGL is required to run the game.
+        <!-- message box to present other runtime errors to the user -->
+        <div id="runtime-error" class="error-box" hidden>
+            <span id="error-message"></span>
         </div>
         <!-- canvas to render to -->
         <div id="container">
@@ -50,21 +50,25 @@
         </div>
         <!-- browser checks and emscripten setup -->
         <script type="text/javascript">
-            // checks if a WebGL context is available
-            function hasWebGL() {
-                try {
-                    return !!document.getElementById('canvas').getContext('webgl');
-                } catch {
-                    return false;
-                }
+            // show an error message
+            function showError(message) {
+                document.getElementById('error-message').textContent = message;
+                document.getElementById('runtime-error').hidden = false;
             }
+            // set up runtime errors to display in the error box
+            window.addEventListener('error', function(e) {
+                showError(e.error.toString());
+                return false;
+            });
+            // get the WebGL context, explicitly turning off antialiasing
+            var webgl = document.getElementById('canvas').getContext('webgl', {
+                antialias: false,
+            });
             // check WebGL availability
-            if (!hasWebGL()) {
+            if (!webgl) {
                 // show the message
-                document.getElementById('nowebgl').hidden = false;
+                showError('WebGL is required to run the game.');
             }
-            // hooks to the console for logging functions
-            var Module = { print: console.log, printErr: console.error };
         </script>
         {{{ SCRIPT }}}
     </body>

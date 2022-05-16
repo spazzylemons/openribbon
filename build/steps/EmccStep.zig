@@ -22,6 +22,8 @@ obj: FileSource,
 entry: FileSource,
 /// Shell webpage
 shell: FileSource,
+/// Library webpage
+library: FileSource,
 
 pub fn create(
     b: *Builder,
@@ -30,6 +32,7 @@ pub fn create(
     name: []const u8,
     entry: FileSource,
     shell: FileSource,
+    library: FileSource,
 ) !*EmccStep {
     const step_name = b.fmt("compile {s} with emscripten", .{dir.getDisplayName()});
     const self = try b.allocator.create(EmccStep);
@@ -41,11 +44,13 @@ pub fn create(
         .name = b.dupe(name),
         .entry = entry,
         .shell = shell,
+        .library = library,
     };
     dir.addStepDependencies(&self.step);
     obj.addStepDependencies(&self.step);
     entry.addStepDependencies(&self.step);
     shell.addStepDependencies(&self.step);
+    library.addStepDependencies(&self.step);
     return self;
 }
 
@@ -66,15 +71,15 @@ fn make(step: *Step) anyerror!void {
         self.obj.getPath(self.b),
         // optimize size
         "-Os",
-        // run closure compiler to optimize javascript
-        "--closure",
-        "1",
         // output to web folder in zig-out
         "-o",
         self.b.pathJoin(&.{ self.dir.getPath(self.b), self.name }),
         // use shell webpage
         "--shell-file",
         self.shell.getPath(self.b),
+        // use js library
+        "--js-library",
+        self.library.getPath(self.b),
         // link WebGL
         "-lGL",
         // link SDL2

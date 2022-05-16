@@ -47,6 +47,7 @@ pub fn build(b: *std.build.Builder) !void {
             "index.html",
             std.build.FileSource.relative("src/emscripten.c"),
             std.build.FileSource.relative("src/shell.html"),
+            std.build.FileSource.relative("src/library.js"),
         );
         // compilation depends on renaming symbols
         compile.step.dependOn(&rename.step);

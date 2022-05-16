@@ -12,14 +12,22 @@ fn emscriptenLoop() callconv(.C) void {
     game.loop();
 }
 
-/// Initialize the game and set the loop callback for Emscripten.
-fn emscriptenMain() callconv(.C) c_int {
+/// Initialize game for Emscripten.
+fn emscriptenInit(unused: ?*anyopaque) callconv(.C) void {
+    // no arguments are passed
+    _ = unused;
+    // initialize game
     game.init() catch |err| {
-        std.log.err("initialization error: {}\n", .{err});
-        return 1;
+        std.debug.panic("initialization error: {}", .{err});
     };
     // set the main loop
     c.emscripten_set_main_loop(emscriptenLoop, 0, 0);
+}
+
+/// Schedule the initialization function for Emscripten.
+fn emscriptenMain() callconv(.C) c_int {
+    // don't run init yet - we want to be in a sync context
+    c.emscripten_async_call(emscriptenInit, null, 0);
     // done here
     return 0;
 }
@@ -27,15 +35,12 @@ fn emscriptenMain() callconv(.C) c_int {
 // select additional methods based on wasm
 pub usingnamespace if (builtin.target.isWasm())
     struct {
-        /// common code for logging to reduce code size
-        fn logCommon(
-            em_level: c_int,
-            level_text: [*:0]const u8,
-            scope: [*:0]const u8,
+        // javascript log implementation
+        extern fn jsLogImpl(
+            level: [*:0]const u8,
+            scope: ?[*:0]const u8,
             message: [*:0]const u8,
-        ) void {
-            c.emscripten_log(em_level, "%s%s: %s", level_text, scope, message);
-        }
+        ) void;
 
         /// log implementation using emscripten to print to console
         pub fn log(
@@ -48,28 +53,28 @@ pub usingnamespace if (builtin.target.isWasm())
             var buffer: [2048]u8 = undefined;
             var impl = std.heap.FixedBufferAllocator.init(&buffer);
             // print to console
-            logCommon(
+            jsLogImpl(
+                // select console method to use
                 switch (level) {
-                    .err => c.EM_LOG_ERROR,
-                    .warn => c.EM_LOG_WARN,
-                    .info => c.EM_LOG_INFO,
-                    .debug => c.EM_LOG_DEBUG,
+                    .err => "error",
+                    .warn => "warn",
+                    .info => "info",
+                    .debug => "debug",
                 },
-                @as([:0]const u8, level.asText()).ptr,
-                @as([:0]const u8, if (scope == .default) "" else "(" ++ @tagName(scope) ++ ")").ptr,
+                if (scope == .default) null else @tagName(scope),
                 (std.fmt.allocPrintZ(impl.allocator(), format, args) catch return).ptr,
             );
         }
+
+        /// javascript panic implementation
+        extern fn jsPanicImpl(ptr: [*]const u8, len: usize) noreturn;
 
         /// panic implementation using emscripten to print to console
         pub fn panic(message: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
             // discard it; we'll never get it anyway
             _ = error_return_trace;
-            // console.error the panic message
-            c.emscripten_log(c.EM_LOG_ERROR, "panic: %.*s", @intCast(c_int, message.len), message.ptr);
-            // raise emscripten unreachable trap
-            asm volatile ("unreachable");
-            unreachable;
+            // show the error in the DOM
+            jsPanicImpl(message.ptr, message.len);
         }
     }
 else
