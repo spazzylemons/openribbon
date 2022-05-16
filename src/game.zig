@@ -1,23 +1,51 @@
 const builtin = @import("builtin");
+const ribbon = @import("ribbon.zig");
 const renderer = @import("renderer.zig");
 const std = @import("std");
 const window = @import("window.zig");
 const zlm = @import("zlm");
 
+/// allocator implementation for non-wasm targets
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
+/// Get the game's allocator.
+pub fn allocator() std.mem.Allocator {
+    if (builtin.target.isWasm()) {
+        // wasm does not support mmap
+        return std.heap.c_allocator;
+    } else {
+        // other targets should
+        return gpa.allocator();
+    }
+}
+
+fn deinitAllocator() void {
+    if (!builtin.target.isWasm()) {
+        // another wasm specialization
+        _ = gpa.deinit();
+    }
+}
+
 /// Initialize the game.
 pub fn init() !void {
+    errdefer deinitAllocator();
     // window context
     try window.init();
     errdefer window.deinit();
     // rendering context
     try renderer.init();
     errdefer renderer.deinit();
+    // ribbon
+    try ribbon.init();
+    errdefer ribbon.deinit();
 }
 
 /// Free resources allocated by the game.
 pub fn deinit() void {
+    ribbon.deinit();
     renderer.deinit();
     window.deinit();
+    deinitAllocator();
 }
 
 /// Run the game loop for one render frame.
@@ -25,14 +53,14 @@ pub fn loop() void {
     // clear the screen
     renderer.clear();
     // set up camera
-    renderer.setCamera(zlm.vec3(0, 5, -10), zlm.vec3(0, 0, 0));
-    // draw a square on the floor
-    renderer.drawLineLoop(&.{
-        zlm.vec3(-1, 0, -1),
-        zlm.vec3(1, 0, -1),
-        zlm.vec3(1, 0, 1),
-        zlm.vec3(-1, 0, 1),
-    }, zlm.vec3(1, 1, 1), zlm.Vec3.zero, zlm.Vec3.zero, 0.125);
+    renderer.setCamera(zlm.vec3(0, 0, -16), zlm.vec3(0, 0, 0));
+    // draw some obstacles
+    ribbon.render(&.{
+        ribbon.Obstacle{ .type = .Block, .pos = -7.0 },
+        ribbon.Obstacle{ .type = .Pit, .pos = -3.0 },
+        ribbon.Obstacle{ .type = .Loop, .pos = 1.0 },
+        ribbon.Obstacle{ .type = .Wave, .pos = 5.0 },
+    });
     // update window
     window.update();
 }

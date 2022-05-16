@@ -153,11 +153,13 @@ pub fn setCamera(position: zlm.Vec3, target: zlm.Vec3) void {
     uniformMat4(params.view, view);
 }
 
-fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, wobble: f32, mode: gl.GLenum) void {
-    // apply color
-    gl.glUniform3f(params.color, color.x, color.y, color.z);
+/// Reseed the wobble parameter.
+pub fn reseed() void {
+    gl.glUniform1f(params.seed, rng.random().float(f32));
+}
+
+pub fn drawLines(vertices: []const zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3) void {
     // rotation matrices
-    // TODO make sure the angle order is correct
     const rot_x = zlm.Mat4.createAngleAxis(zlm.Vec3.unitX, rotation.x);
     const rot_y = zlm.Mat4.createAngleAxis(zlm.Vec3.unitY, rotation.y);
     const rot_z = zlm.Mat4.createAngleAxis(zlm.Vec3.unitZ, rotation.z);
@@ -167,9 +169,6 @@ fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rot
     const model = rot_x.mul(rot_y).mul(rot_z).mul(offset_matrix);
     // send model matrix to gpu
     uniformMat4(params.model, model);
-    // set up randomness
-    gl.glUniform1f(params.seed, rng.random().float(f32));
-    gl.glUniform1f(params.scale, wobble);
     // send vertices to gpu
     gl.glBufferData(
         gl.GL_ARRAY_BUFFER,
@@ -177,13 +176,74 @@ fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rot
         vertices.ptr,
         gl.GL_STATIC_DRAW,
     );
-    gl.glDrawArrays(mode, 0, @intCast(gl.GLsizei, vertices.len));
+    gl.glDrawArrays(gl.GL_LINES, 0, @intCast(gl.GLsizei, vertices.len));
 }
 
-pub fn drawLineLoop(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, wobble: f32) void {
-    drawCommon(vertices, color, offset, rotation, wobble, gl.GL_LINE_LOOP);
+/// Set the drawing color.
+pub fn setColor(color: zlm.Vec3) void {
+    gl.glUniform3f(params.color, color.x, color.y, color.z);
 }
 
-pub fn drawLineStrip(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, wobble: f32) void {
-    drawCommon(vertices, color, offset, rotation, wobble, gl.GL_LINE_STRIP);
+/// Set the drawing wobble.
+pub fn setWobble(wobble: f32) void {
+    gl.glUniform1f(params.scale, wobble);
 }
+
+/// A 3D model.
+pub const Model = struct {
+    /// The vertices in the model.
+    vertices: []const zlm.Vec3,
+
+    fn readFixedPoint(reader: anytype) !f32 {
+        const int = try reader.readIntBig(i16);
+        return @intToFloat(f32, int) / 256;
+    }
+
+    /// Load a model from a reader. Checks if the model is valid while loading.
+    pub fn load(allocator: std.mem.Allocator, reader: anytype) !Model {
+        var vertices = try allocator.alloc(zlm.Vec3, try reader.readByte());
+        defer allocator.free(vertices);
+
+        for (vertices) |*vertex| {
+            vertex.x = try readFixedPoint(reader);
+            vertex.y = try readFixedPoint(reader);
+            vertex.z = try readFixedPoint(reader);
+        }
+
+        var model_vertices = std.ArrayList(zlm.Vec3).init(allocator);
+        defer model_vertices.deinit();
+
+        var group_count = try reader.readByte();
+        while (group_count > 0) : (group_count -= 1) {
+            var group_length = @as(u16, try reader.readByte()) + 1;
+            try model_vertices.ensureUnusedCapacity(2 * group_length);
+
+            var last = try reader.readByte();
+            if (last >= vertices.len) return error.Overflow;
+            while (group_length > 0) : (group_length -= 1) {
+                const current = try reader.readByte();
+                if (current >= vertices.len) return error.Overflow;
+                model_vertices.appendAssumeCapacity(vertices[last]);
+                model_vertices.appendAssumeCapacity(vertices[current]);
+                last = current;
+            }
+        }
+
+        return Model{ .vertices = model_vertices.toOwnedSlice() };
+    }
+
+    /// Load the model from an embedded file.
+    pub fn loadEmbedded(allocator: std.mem.Allocator, comptime src: []const u8) !Model {
+        var stream = std.io.fixedBufferStream(@embedFile("assets/" ++ src));
+        return load(allocator, stream.reader());
+    }
+
+    /// Free the model's vertices.
+    pub fn deinit(self: Model, allocator: std.mem.Allocator) void {
+        allocator.free(self.vertices);
+    }
+
+    pub fn render(self: Model, offset: zlm.Vec3, rotation: zlm.Vec3) void {
+        drawLines(self.vertices, offset, rotation);
+    }
+};
