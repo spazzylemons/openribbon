@@ -84,7 +84,6 @@ fn createProgram() !void {
 /// Initialize the renderer. Expects the window to be initialized.
 pub fn init() !void {
     gl.glEnable(gl.GL_DEPTH_TEST);
-    gl.glEnable(gl.GL_CULL_FACE);
 
     try createProgram();
     errdefer gl.glDeleteProgram(program);
