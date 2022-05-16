@@ -77,7 +77,7 @@ pub fn init() !void {
     errdefer SDL.quit();
     // expecting GLES3
     try SDL.gl.setAttribute(.{ .context_profile_mask = .es });
-    try SDL.gl.setAttribute(.{ .context_major_version = 3 });
+    try SDL.gl.setAttribute(.{ .context_major_version = 2 });
     try SDL.gl.setAttribute(.{ .context_minor_version = 0 });
     // create window for SDL
     window = try SDL.createWindow(

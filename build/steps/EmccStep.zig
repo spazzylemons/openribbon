@@ -80,8 +80,8 @@ fn make(step: *Step) anyerror!void {
         // link SDL2
         "-sUSE_SDL=2",
         // require WebGL2
-        "-sMAX_WEBGL_VERSION=2",
-        "-sMIN_WEBGL_VERSION=2",
+        "-sMAX_WEBGL_VERSION=1",
+        "-sMIN_WEBGL_VERSION=1",
     }, self.b.allocator);
 
     const term = try child.spawnAndWait();

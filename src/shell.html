@@ -40,9 +40,9 @@
                 Javascript is required to run the game.
             </div>
         </noscript>
-        <!-- message to show when WebGL2 is not available -->
-        <div id="nowebgl2" class="lacking-feature" hidden>
-            WebGL2 is required to run the game.
+        <!-- message to show when WebGL is not available -->
+        <div id="nowebgl" class="lacking-feature" hidden>
+            WebGL is required to run the game.
         </div>
         <!-- canvas to render to -->
         <div id="container">
@@ -50,18 +50,18 @@
         </div>
         <!-- browser checks and emscripten setup -->
         <script type="text/javascript">
-            // checks if a WebGL2 context is available
-            function hasWebGL2() {
+            // checks if a WebGL context is available
+            function hasWebGL() {
                 try {
-                    return !!document.getElementById('canvas').getContext('webgl2');
+                    return !!document.getElementById('canvas').getContext('webgl');
                 } catch {
                     return false;
                 }
             }
-            // check WebGL2 availability
-            if (!hasWebGL2()) {
+            // check WebGL availability
+            if (!hasWebGL()) {
                 // show the message
-                document.getElementById('nowebgl2').hidden = false;
+                document.getElementById('nowebgl').hidden = false;
             }
             // hooks to the console for logging functions
             var Module = { print: console.log, printErr: console.error };
