@@ -20,7 +20,12 @@ var params: struct {
     projection: gl.GLint,
 
     color: gl.GLint,
+
+    seed: gl.GLint,
+    scale: gl.GLint,
 } = undefined;
+
+var rng = std.rand.DefaultPrng.init(1);
 
 fn checkFailure(
     object: gl.GLuint,
@@ -148,7 +153,7 @@ pub fn setCamera(position: zlm.Vec3, target: zlm.Vec3) void {
     uniformMat4(params.view, view);
 }
 
-fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, mode: gl.GLenum) void {
+fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, wobble: f32, mode: gl.GLenum) void {
     // apply color
     gl.glUniform3f(params.color, color.x, color.y, color.z);
     // rotation matrices
@@ -162,6 +167,9 @@ fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rot
     const model = rot_x.mul(rot_y).mul(rot_z).mul(offset_matrix);
     // send model matrix to gpu
     uniformMat4(params.model, model);
+    // set up randomness
+    gl.glUniform1f(params.seed, rng.random().float(f32));
+    gl.glUniform1f(params.scale, wobble);
     // send vertices to gpu
     gl.glBufferData(
         gl.GL_ARRAY_BUFFER,
@@ -172,10 +180,10 @@ fn drawCommon(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rot
     gl.glDrawArrays(mode, 0, @intCast(gl.GLsizei, vertices.len));
 }
 
-pub fn drawLineLoop(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3) void {
-    drawCommon(vertices, color, offset, rotation, gl.GL_LINE_LOOP);
+pub fn drawLineLoop(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, wobble: f32) void {
+    drawCommon(vertices, color, offset, rotation, wobble, gl.GL_LINE_LOOP);
 }
 
-pub fn drawLineStrip(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3) void {
-    drawCommon(vertices, color, offset, rotation, gl.GL_LINE_STRIP);
+pub fn drawLineStrip(vertices: []const zlm.Vec3, color: zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3, wobble: f32) void {
+    drawCommon(vertices, color, offset, rotation, wobble, gl.GL_LINE_STRIP);
 }

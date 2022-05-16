@@ -32,7 +32,7 @@ pub fn loop() void {
         zlm.vec3(1, 0, -1),
         zlm.vec3(1, 0, 1),
         zlm.vec3(-1, 0, 1),
-    }, zlm.vec3(1, 1, 1), zlm.Vec3.zero, zlm.Vec3.zero);
+    }, zlm.vec3(1, 1, 1), zlm.Vec3.zero, zlm.Vec3.zero, 0.125);
     // update window
     window.update();
 }
