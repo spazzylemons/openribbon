@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>rhythm</title>
+        <style>
+            :root {
+                --error-dark: #400;
+                --error-light: #fbb;
+            }
+
+            body {
+                font-family: sans-serif;
+                background-color: #004;
+                color: white;
+                text-align: center;
+            }
+
+            .lacking-feature {
+                color: var(--error-dark);
+                background-color: var(--error-light);
+                border: 1px solid var(--error-dark);
+                padding: 1em;
+            }
+
+            .container {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                margin: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- message to show when Javascript is not available -->
+        <noscript>
+            <div class="lacking-feature">
+                Javascript is required to run the game.
+            </div>
+        </noscript>
+        <!-- message to show when WebGL2 is not available -->
+        <div id="nowebgl2" class="lacking-feature" hidden>
+            WebGL2 is required to run the game.
+        </div>
+        <!-- canvas to render to -->
+        <div id="container">
+            <canvas id="canvas"></canvas>
+        </div>
+        <!-- browser checks and emscripten setup -->
+        <script type="text/javascript">
+            // checks if a WebGL2 context is available
+            function hasWebGL2() {
+                try {
+                    return !!document.getElementById('canvas').getContext('webgl2');
+                } catch {
+                    return false;
+                }
+            }
+            // check WebGL2 availability
+            if (!hasWebGL2()) {
+                // show the message
+                document.getElementById('nowebgl2').hidden = false;
+            }
+            // hooks to the console for logging functions
+            var Module = { print: console.log, printErr: console.error };
+        </script>
+        {{{ SCRIPT }}}
+    </body>
+</html>
