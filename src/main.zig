@@ -1,5 +1,7 @@
 const builtin = @import("builtin");
+const game = @import("game.zig");
 const std = @import("std");
+const window = @import("window.zig");
 
 const c = @cImport({
     @cInclude("emscripten.h");
@@ -7,11 +9,15 @@ const c = @cImport({
 
 /// Run game loop for Emscripten.
 fn emscriptenLoop() callconv(.C) void {
-    // nothing at the moment
+    game.loop();
 }
 
 /// Initialize the game and set the loop callback for Emscripten.
 fn emscriptenMain() callconv(.C) c_int {
+    game.init() catch |err| {
+        std.log.err("initialization error: {}\n", .{err});
+        return 1;
+    };
     // set the main loop
     c.emscripten_set_main_loop(emscriptenLoop, 0, 0);
     // done here
@@ -69,7 +75,12 @@ pub usingnamespace if (builtin.target.isWasm())
 else
     struct {
         pub fn main() !void {
-            // nothing at the moment
+            try game.init();
+            defer game.deinit();
+
+            while (!window.shouldClose()) {
+                game.loop();
+            }
         }
     };
 

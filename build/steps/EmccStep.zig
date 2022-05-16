@@ -57,7 +57,7 @@ fn make(step: *Step) anyerror!void {
         return error.NoEmsdk;
     };
 
-    const child = try std.ChildProcess.init(&.{
+    var child = std.ChildProcess.init(&.{
         // invoke emscripten compiler
         self.b.pathJoin(&.{ emsdk, "upstream/emscripten/emcc" }),
         // pass in entry point
@@ -83,7 +83,6 @@ fn make(step: *Step) anyerror!void {
         "-sMAX_WEBGL_VERSION=2",
         "-sMIN_WEBGL_VERSION=2",
     }, self.b.allocator);
-    defer child.deinit();
 
     const term = try child.spawnAndWait();
     if (term != .Exited or term.Exited != 0) {
