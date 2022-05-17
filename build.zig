@@ -2,6 +2,7 @@ const deps = @import("deps.zig");
 const Sdk = @import("SDL.zig/Sdk.zig");
 const std = @import("std");
 
+const CopyMusicFolderStep = @import("build/steps/CopyMusicFolderStep.zig");
 const EmccStep = @import("build/steps/EmccStep.zig");
 const MakeDirStep = @import("build/steps/MakeDirStep.zig");
 const RenameSymbolsStep = @import("build/steps/RenameSymbolsStep.zig");
@@ -39,6 +40,12 @@ pub fn build(b: *std.build.Builder) !void {
         const rename = try RenameSymbolsStep.create(b, exe.getOutputSource());
         // create the output directory
         const mkdir = try MakeDirStep.create(b, b.pathJoin(&.{ b.install_path, "web" }));
+        // copy the music folder
+        const music = try CopyMusicFolderStep.create(
+            b,
+            std.build.FileSource.relative("music"),
+            mkdir.directory(),
+        );
         // compile the executable
         const compile = try EmccStep.create(
             b,
@@ -51,11 +58,15 @@ pub fn build(b: *std.build.Builder) !void {
         );
         // compilation depends on renaming symbols
         compile.step.dependOn(&rename.step);
-        // install step depends on compilation
-        b.getInstallStep().dependOn(&compile.step);
+        // music depends on compilation
+        music.step.dependOn(&compile.step);
+        // install step depends on music
+        b.getInstallStep().dependOn(&music.step);
     } else {
         // dynamically link SDL2
         sdk.link(exe, .dynamic);
+        // link SDL Mixer
+        exe.linkSystemLibrary("SDL2_mixer");
         // link OpenGL
         exe.linkSystemLibrary("GL");
         // if compiling to native target, also allow running it

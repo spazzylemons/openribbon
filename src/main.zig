@@ -7,9 +7,15 @@ const c = @cImport({
     @cInclude("emscripten.h");
 });
 
+fn wrapError(value: anyerror!void) void {
+    value catch |err| {
+        std.debug.panic("error: {}", .{err});
+    };
+}
+
 /// Run game loop for Emscripten.
 fn emscriptenLoop() callconv(.C) void {
-    game.loop();
+    wrapError(game.loop());
 }
 
 /// Initialize game for Emscripten.
@@ -17,9 +23,7 @@ fn emscriptenInit(unused: ?*anyopaque) callconv(.C) void {
     // no arguments are passed
     _ = unused;
     // initialize game
-    game.init() catch |err| {
-        std.debug.panic("initialization error: {}", .{err});
-    };
+    wrapError(game.init());
     // set the main loop
     c.emscripten_set_main_loop(emscriptenLoop, 0, 0);
 }
@@ -84,7 +88,7 @@ else
             defer game.deinit();
 
             while (!window.shouldClose()) {
-                game.loop();
+                try game.loop();
             }
         }
     };

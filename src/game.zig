@@ -1,4 +1,5 @@
 const builtin = @import("builtin");
+const music = @import("music.zig");
 const ribbon = @import("ribbon.zig");
 const renderer = @import("renderer.zig");
 const std = @import("std");
@@ -26,6 +27,8 @@ fn deinitAllocator() void {
     }
 }
 
+var audio: ?music.Audio = null;
+
 /// Initialize the game.
 pub fn init() !void {
     errdefer deinitAllocator();
@@ -42,6 +45,7 @@ pub fn init() !void {
 
 /// Free resources allocated by the game.
 pub fn deinit() void {
+    if (audio) |a| a.deinit();
     ribbon.deinit();
     renderer.deinit();
     window.deinit();
@@ -49,7 +53,7 @@ pub fn deinit() void {
 }
 
 /// Run the game loop for one render frame.
-pub fn loop() void {
+pub fn loop() !void {
     // clear the screen
     renderer.clear();
     // set up camera
@@ -61,6 +65,10 @@ pub fn loop() void {
         ribbon.Obstacle{ .type = .Loop, .pos = 1.0 },
         ribbon.Obstacle{ .type = .Wave, .pos = 5.0 },
     });
+    if (window.isKeyDown(.space) and audio == null) {
+        audio = try music.Audio.init("music/fresh.mp3");
+        try audio.?.play();
+    }
     // update window
     window.update();
 }

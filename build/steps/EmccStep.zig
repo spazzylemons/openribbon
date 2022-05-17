@@ -87,6 +87,8 @@ fn make(step: *Step) anyerror!void {
         // require WebGL2
         "-sMAX_WEBGL_VERSION=1",
         "-sMIN_WEBGL_VERSION=1",
+        // use asyncify
+        "-sASYNCIFY",
     }, self.b.allocator);
 
     const term = try child.spawnAndWait();

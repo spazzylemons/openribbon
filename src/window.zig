@@ -11,8 +11,14 @@ pub const WIDTH = 640;
 pub const HEIGHT = 360;
 pub const TITLE = "rhythm";
 
+const is_wasm = builtin.target.isWasm();
+
 const c = @cImport({
-    @cInclude("emscripten/html5.h");
+    if (is_wasm) {
+        @cInclude("emscripten/html5.h");
+    } else {
+        @cInclude("SDL2/SDL_mixer.h");
+    }
 });
 
 const EmHtml5Error = error{
@@ -73,7 +79,10 @@ const WebGLContext = struct {
 /// Initialize the window.
 pub fn init() !void {
     // initialize SDL
-    try SDL.init(.{ .video = true });
+    try SDL.init(.{
+        .video = true,
+        .audio = !is_wasm,
+    });
     errdefer SDL.quit();
     // expecting GLES3
     try SDL.gl.setAttribute(.{ .context_profile_mask = .es });
@@ -90,7 +99,7 @@ pub fn init() !void {
     );
     errdefer window.destroy();
     // wasm specialization
-    if (comptime builtin.target.isWasm()) {
+    if (is_wasm) {
         // set attributes
         var attrs = WebGLContext.Attrs.init();
         // TODO this does not work, canvas still has AA applied
@@ -106,6 +115,14 @@ pub fn init() !void {
         // set vsync
         // TODO how can we set a custom frame rate?
         try SDL.gl.setSwapInterval(.vsync);
+        // initialize mixer
+        if (c.Mix_Init(c.MIX_INIT_MP3) != c.MIX_INIT_MP3) {
+            @panic("TODO proper error handling here");
+        }
+        errdefer c.Mix_Quit();
+        // open audio stream
+        _ = c.Mix_OpenAudio(44100, c.AUDIO_S16SYS, 2, 120);
+        errdefer c.Mix_CloseAudio();
     }
     // should not yet close
     should_close = false;
@@ -113,6 +130,10 @@ pub fn init() !void {
 
 /// Destroy the window.
 pub fn deinit() void {
+    if (!is_wasm) {
+        c.Mix_CloseAudio();
+        c.Mix_Quit();
+    }
     // close SDL and free related resources
     SDL.quit();
 }
