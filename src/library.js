@@ -42,4 +42,16 @@ mergeInto(LibraryManager.library, {
     jsPlayAudio: function(handle) {
         openAudios[handle].play();
     },
+
+    jsGetAudioPos: function(handle) {
+        // TODO on firefox this updates infrequently (works well on chromium)
+        return openAudios[handle].currentTime * 1000;
+    },
+
+    jsGetAudioDuration: function(handle) {
+        var d = openAudios[handle].duration;
+        // if the media is streaming, duration is Infinity
+        if (d == Infinity) return -1;
+        return d * 1000;
+    },
 });

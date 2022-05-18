@@ -1,6 +1,7 @@
 //! Abstractions for user interface components.
 
 const builtin = @import("builtin");
+const music = @import("music.zig");
 const renderer = @import("renderer.zig");
 const SDL = @import("sdl2");
 
@@ -16,8 +17,6 @@ const is_wasm = builtin.target.isWasm();
 const c = @cImport({
     if (is_wasm) {
         @cInclude("emscripten/html5.h");
-    } else {
-        @cInclude("SDL2/SDL_mixer.h");
     }
 });
 
@@ -115,25 +114,18 @@ pub fn init() !void {
         // set vsync
         // TODO how can we set a custom frame rate?
         try SDL.gl.setSwapInterval(.vsync);
-        // initialize mixer
-        if (c.Mix_Init(c.MIX_INIT_MP3) != c.MIX_INIT_MP3) {
-            @panic("TODO proper error handling here");
-        }
-        errdefer c.Mix_Quit();
-        // open audio stream
-        _ = c.Mix_OpenAudio(44100, c.AUDIO_S16SYS, 2, 120);
-        errdefer c.Mix_CloseAudio();
     }
+    // initialize music subsystem
+    try music.init();
+    errdefer music.deinit();
     // should not yet close
     should_close = false;
 }
 
 /// Destroy the window.
 pub fn deinit() void {
-    if (!is_wasm) {
-        c.Mix_CloseAudio();
-        c.Mix_Quit();
-    }
+    // close audio resources
+    music.deinit();
     // close SDL and free related resources
     SDL.quit();
 }

@@ -65,8 +65,8 @@ pub fn build(b: *std.build.Builder) !void {
     } else {
         // dynamically link SDL2
         sdk.link(exe, .dynamic);
-        // link SDL Mixer
-        exe.linkSystemLibrary("SDL2_mixer");
+        // link mpg123
+        exe.linkSystemLibrary("mpg123");
         // link OpenGL
         exe.linkSystemLibrary("GL");
         // if compiling to native target, also allow running it

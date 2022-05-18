@@ -59,15 +59,25 @@ pub fn loop() !void {
     // set up camera
     renderer.setCamera(zlm.vec3(0, 0, -16), zlm.vec3(0, 0, 0));
     // draw some obstacles
-    ribbon.render(&.{
-        ribbon.Obstacle{ .type = .Block, .pos = -7.0 },
-        ribbon.Obstacle{ .type = .Pit, .pos = -3.0 },
-        ribbon.Obstacle{ .type = .Loop, .pos = 1.0 },
-        ribbon.Obstacle{ .type = .Wave, .pos = 5.0 },
-    });
     if (window.isKeyDown(.space) and audio == null) {
         audio = try music.Audio.init("music/fresh.mp3");
         try audio.?.play();
+    }
+    if (audio) |a| {
+        if (a.getPos() >= (try a.getDuration())) {
+            // audio is finished, stop playing it
+            a.deinit();
+            audio = null;
+        } else {
+            const sec = @intToFloat(f32, @mod(a.getPos(), 500)) / 125;
+            const obstacles = [4]ribbon.Obstacle{
+                .{ .type = .Block, .pos = sec - 7.0 },
+                .{ .type = .Block, .pos = sec - 3.0 },
+                .{ .type = .Block, .pos = sec + 1.0 },
+                .{ .type = .Block, .pos = sec + 5.0 },
+            };
+            ribbon.render(&obstacles);
+        }
     }
     // update window
     window.update();
