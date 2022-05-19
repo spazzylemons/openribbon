@@ -12,12 +12,16 @@ mergeInto(LibraryManager.library, {
 
     $audioLib: function() {
         const handles = new ResourceManager();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioContext();
 
         _jsAudioOpen = function(src) {
             const audio = new Audio(UTF8ToString(src));
-            const handle = handles.open({ ready: false, audio });
+            const track = ctx.createMediaElementSource(audio);
+            track.connect(ctx.destination);
+            const handle = handles.open({ ready: false, track });
             audio.load();
-            audio.addEventListener('canplaythrough', function(e) {
+            audio.addEventListener('canplaythrough', () => {
                 handles.slots[handle].ready = true;
             });
             return handle;
@@ -28,22 +32,22 @@ mergeInto(LibraryManager.library, {
         };
     
         _jsAudioClose = function(handle) {
-            handles.slots[handle].audio.pause();
+            handles.slots[handle].track.mediaElement.pause();
+            handles.slots[handle].track.disconnect();
             handles.close(handle);
         };
     
         _jsAudioPlay = function(handle) {
-            // TODO - audio playback is delayed
-            handles.slots[handle].audio.play();
+            handles.slots[handle].track.mediaElement.play();
         };
     
         _jsAudioTell = function(handle) {
             // TODO on firefox this updates infrequently (works well on chromium)
-            return handles.slots[handle].audio.currentTime * 1000;
+            return handles.slots[handle].track.mediaElement.currentTime * 1000;
         };
     
         _jsAudioStat = function(handle) {
-            const d = handles.slots[handle].audio.duration;
+            const d = handles.slots[handle].track.mediaElement.duration;
             // if the media is streaming, duration is Infinity
             if (d === Infinity) return -1;
             return d * 1000;
