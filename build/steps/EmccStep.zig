@@ -22,8 +22,10 @@ obj: FileSource,
 entry: FileSource,
 /// Shell webpage
 shell: FileSource,
-/// Library webpage
+/// Library file
 library: FileSource,
+/// Pre run file
+prerun: FileSource,
 
 pub fn create(
     b: *Builder,
@@ -33,6 +35,7 @@ pub fn create(
     entry: FileSource,
     shell: FileSource,
     library: FileSource,
+    prerun: FileSource,
 ) !*EmccStep {
     const step_name = b.fmt("compile {s} with emscripten", .{dir.getDisplayName()});
     const self = try b.allocator.create(EmccStep);
@@ -45,12 +48,14 @@ pub fn create(
         .entry = entry,
         .shell = shell,
         .library = library,
+        .prerun = prerun,
     };
     dir.addStepDependencies(&self.step);
     obj.addStepDependencies(&self.step);
     entry.addStepDependencies(&self.step);
     shell.addStepDependencies(&self.step);
     library.addStepDependencies(&self.step);
+    prerun.addStepDependencies(&self.step);
     return self;
 }
 
@@ -82,11 +87,14 @@ fn make(step: *Step) anyerror!void {
         // use js library
         "--js-library",
         self.library.getPath(self.b),
+        // add pre-run code
+        "--pre-js",
+        self.prerun.getPath(self.b),
         // link WebGL
         "-lGL",
         // link SDL2
         "-sUSE_SDL=2",
-        // require WebGL2
+        // require WebGL
         "-sMAX_WEBGL_VERSION=1",
         "-sMIN_WEBGL_VERSION=1",
         // use asyncify

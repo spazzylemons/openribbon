@@ -52,9 +52,10 @@ pub fn build(b: *std.build.Builder) !void {
             mkdir.directory(),
             exe.getOutputSource(),
             "index.html",
-            std.build.FileSource.relative("src/emscripten.c"),
-            std.build.FileSource.relative("src/shell.html"),
-            std.build.FileSource.relative("src/library.js"),
+            std.build.FileSource.relative("src/emscripten/entry.c"),
+            std.build.FileSource.relative("src/emscripten/shell.html"),
+            std.build.FileSource.relative("src/emscripten/library.js"),
+            std.build.FileSource.relative("src/emscripten/prerun.js"),
         );
         // compilation depends on renaming symbols
         compile.step.dependOn(&rename.step);

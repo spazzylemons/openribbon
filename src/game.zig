@@ -1,31 +1,9 @@
-const builtin = @import("builtin");
 const music = @import("music.zig");
 const ribbon = @import("ribbon.zig");
 const renderer = @import("renderer.zig");
-const std = @import("std");
+const util = @import("util.zig");
 const window = @import("window.zig");
 const zlm = @import("zlm");
-
-/// allocator implementation for non-wasm targets
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-
-/// Get the game's allocator.
-pub fn allocator() std.mem.Allocator {
-    if (builtin.target.isWasm()) {
-        // wasm does not support mmap
-        return std.heap.c_allocator;
-    } else {
-        // other targets should
-        return gpa.allocator();
-    }
-}
-
-fn deinitAllocator() void {
-    if (!builtin.target.isWasm()) {
-        // another wasm specialization
-        _ = gpa.deinit();
-    }
-}
 
 var audio: ?music.Audio = null;
 var track_data: ribbon.TrackData = undefined;
@@ -33,7 +11,7 @@ var track: ?ribbon.Track = undefined;
 
 /// Initialize the game.
 pub fn init() !void {
-    errdefer deinitAllocator();
+    errdefer util.deinit();
     // window context
     try window.init();
     errdefer window.deinit();
@@ -55,7 +33,7 @@ pub fn deinit() void {
     ribbon.deinit();
     renderer.deinit();
     window.deinit();
-    deinitAllocator();
+    util.deinit();
 }
 
 /// Run the game loop for one render frame.

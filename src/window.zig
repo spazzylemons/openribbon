@@ -1,9 +1,9 @@
 //! Abstractions for user interface components.
 
-const builtin = @import("builtin");
 const music = @import("music.zig");
 const renderer = @import("renderer.zig");
 const SDL = @import("sdl2");
+const util = @import("util.zig");
 
 var window: SDL.Window = undefined;
 var should_close: bool = undefined;
@@ -12,13 +12,7 @@ pub const WIDTH = 640;
 pub const HEIGHT = 360;
 pub const TITLE = "rhythm";
 
-const is_wasm = builtin.target.isWasm();
-
-const c = @cImport({
-    if (is_wasm) {
-        @cInclude("emscripten/html5.h");
-    }
-});
+const c = util.c;
 
 const EmHtml5Error = error{
     Deferred,
@@ -80,7 +74,7 @@ pub fn init() !void {
     // initialize SDL
     try SDL.init(.{
         .video = true,
-        .audio = !is_wasm,
+        .audio = !util.is_wasm,
     });
     errdefer SDL.quit();
     // expecting GLES3
@@ -97,12 +91,15 @@ pub fn init() !void {
         .{ .opengl = true },
     );
     errdefer window.destroy();
+    // initialize music subsystem
+    try music.init();
+    errdefer music.deinit();
+    // should not yet close
+    should_close = false;
     // wasm specialization
-    if (is_wasm) {
+    if (util.is_wasm) {
         // set attributes
         var attrs = WebGLContext.Attrs.init();
-        // TODO this does not work, canvas still has AA applied
-        attrs.data.antialias = c.EM_FALSE;
         // create a context
         const context = try WebGLContext.init("canvas", attrs);
         errdefer context.deinit();
@@ -115,11 +112,6 @@ pub fn init() !void {
         // TODO how can we set a custom frame rate?
         try SDL.gl.setSwapInterval(.vsync);
     }
-    // initialize music subsystem
-    try music.init();
-    errdefer music.deinit();
-    // should not yet close
-    should_close = false;
 }
 
 /// Destroy the window.

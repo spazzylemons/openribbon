@@ -1,22 +1,8 @@
-const builtin = @import("builtin");
-const game = @import("game.zig");
 const SDL = @import("sdl2");
 const std = @import("std");
+const util = @import("util.zig");
 
-const is_wasm = builtin.target.isWasm();
-
-const c = @cImport({
-    if (is_wasm) {
-        @cInclude("emscripten.h");
-    } else {
-        @cInclude("mpg123.h");
-    }
-});
-
-var channel: SDL.c.SDL_AudioDeviceID = undefined;
-
-var playing_tracks: std.ArrayList(Audio) = undefined;
-var mix_buffer: []i16 = undefined;
+const c = util.c;
 
 const MpegError = error{
     GenericError,
@@ -68,6 +54,10 @@ const CHANNEL_COUNT = 2;
 const SDL_FORMAT = SDL.c.AUDIO_S16SYS;
 const MPG_FORMAT = c.MPG123_ENC_SIGNED_16;
 
+var channel: SDL.c.SDL_AudioDeviceID = undefined;
+var playing_tracks: std.ArrayList(Audio) = undefined;
+var mix_buffer: []i16 = undefined;
+
 fn audioCallback(userdata: ?*anyopaque, stream: ?[*]u8, len: c_int) callconv(.C) void {
     _ = userdata;
     // cast to unsigned
@@ -100,14 +90,14 @@ fn audioCallback(userdata: ?*anyopaque, stream: ?[*]u8, len: c_int) callconv(.C)
 }
 
 pub fn init() !void {
-    if (!is_wasm) {
+    if (!util.is_wasm) {
         // initialize mpg123
         const err = c.mpg123_init();
         if (err != c.MPG123_OK) {
             return makeMpegError(err);
         }
 
-        playing_tracks = std.ArrayList(Audio).init(game.allocator());
+        playing_tracks = std.ArrayList(Audio).init(util.allocator);
         errdefer playing_tracks.deinit();
 
         var desired = std.mem.zeroes(SDL.c.SDL_AudioSpec);
@@ -123,71 +113,63 @@ pub fn init() !void {
         }
         errdefer SDL.c.SDL_CloseAudioDevice(id);
 
-        mix_buffer = try game.allocator().alloc(i16, obtained.size / @sizeOf(i16));
-        errdefer game.allocator().free(mix_buffer);
+        mix_buffer = try util.allocator.alloc(i16, obtained.size / @sizeOf(i16));
+        errdefer util.allocator.free(mix_buffer);
 
         SDL.c.SDL_PauseAudioDevice(id, 0);
     }
 }
 
 pub fn deinit() void {
-    if (!is_wasm) {
+    if (!util.is_wasm) {
         playing_tracks.deinit();
-        game.allocator().free(mix_buffer);
+        util.allocator.free(mix_buffer);
     }
 }
 
-pub const Audio = if (is_wasm)
+pub const Audio = if (util.is_wasm)
     struct {
         const Self = @This();
 
         handle: i32,
 
-        extern fn jsNewAudio(src: [*:0]const u8) i32;
-
-        extern fn jsIsAudioReady(handle: i32) i32;
+        extern fn jsAudioOpen(src: [*:0]const u8) i32;
+        extern fn jsAudioReady(handle: i32) i32;
+        extern fn jsAudioClose(handle: i32) void;
+        extern fn jsAudioPlay(handle: i32) void;
+        extern fn jsAudioTell(handle: i32) u64;
+        extern fn jsAudioStat(handle: i32) i64;
 
         pub fn init(src: [*:0]const u8) !Self {
-            const handle = jsNewAudio(src);
-            if (handle == -1) return error.AudioError;
-            while (jsIsAudioReady(handle) == 0) {
-                c.emscripten_sleep(0);
-            }
+            const handle = jsAudioOpen(src);
+            while (jsAudioReady(handle) == 0) util.yield();
             return Self{ .handle = handle };
         }
 
-        extern fn jsFreeAudio(handle: i32) void;
-
         pub fn deinit(self: Self) void {
-            jsFreeAudio(self.handle);
+            jsAudioClose(self.handle);
         }
-
-        extern fn jsPlayAudio(handle: i32) void;
 
         pub fn play(self: Self) !void {
-            jsPlayAudio(self.handle);
+            jsAudioPlay(self.handle);
         }
-
-        extern fn jsGetAudioPos(handle: i32) u64;
 
         pub fn getPos(self: Self) u64 {
-            return jsGetAudioPos(self.handle);
+            return jsAudioTell(self.handle);
         }
 
-        extern fn jsGetAudioDuration(handle: i32) u64;
-
         pub fn getDuration(self: Self) !u64 {
-            const result = jsGetAudioDuration(self.handle);
+            const result = jsAudioStat(self.handle);
             if (result < 0) return error.UnknownTrackLength;
-            return result;
+            return @intCast(u64, result);
         }
     }
 else
     struct {
         const Self = @This();
 
-        // zig was getting a bit too eagev to evaluate this type
-        handle: *if (is_wasm) anyopaque else c.mpg123_handle,
+        // zig was getting a bit too eager to evaluate this type
+        handle: *if (util.is_wasm) anyopaque else c.mpg123_handle,
 
         pub fn init(src: [*:0]const u8) !Self {
             var err: c_int = undefined;
@@ -200,7 +182,6 @@ else
                 return makeMpegError(err);
             }
             // open file, with settings matching SDL audio device
-            // TODO what is the endianness of mpg123
             err = c.mpg123_open_fixed(self.handle, src, CHANNEL_COUNT, c.MPG123_ENC_SIGNED_16);
             if (err != c.MPG123_OK) {
                 return makeMpegError(err);

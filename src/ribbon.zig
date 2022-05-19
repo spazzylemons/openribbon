@@ -1,4 +1,3 @@
-const game = @import("game.zig");
 const renderer = @import("renderer.zig");
 const std = @import("std");
 const util = @import("util.zig");
@@ -10,7 +9,7 @@ const ObstacleModel = struct {
     end_x: f32,
 
     fn loadCommon(model: renderer.Model) !ObstacleModel {
-        errdefer model.deinit(game.allocator());
+        errdefer model.deinit(util.allocator);
         // dynamically calculate endpoints
         var start_x = std.math.inf_f32;
         var end_x = -std.math.inf_f32;
@@ -33,11 +32,11 @@ const ObstacleModel = struct {
     }
 
     fn load(comptime src: []const u8) !ObstacleModel {
-        return loadCommon(try renderer.Model.loadEmbedded(game.allocator(), src));
+        return loadCommon(try renderer.Model.loadEmbedded(util.allocator, src));
     }
 
     fn deinit(self: ObstacleModel) void {
-        self.model.deinit(game.allocator());
+        self.model.deinit(util.allocator);
     }
 };
 
@@ -127,7 +126,7 @@ pub const TrackData = struct {
         // TODO custom file format
         var tokens = std.json.TokenStream.init(source);
         const self = try std.json.parse(TrackData, &tokens, .{
-            .allocator = game.allocator(),
+            .allocator = util.allocator,
         });
         errdefer self.deinit();
         // obstacle timings should be sorted
@@ -138,12 +137,12 @@ pub const TrackData = struct {
 
     pub fn parseFile(filename: [:0]const u8) !TrackData {
         const contents = try util.readFile(filename);
-        defer game.allocator().free(contents);
+        defer util.allocator.free(contents);
         return try parse(contents);
     }
 
     pub fn deinit(self: TrackData) void {
-        game.allocator().free(self.obstacles);
+        util.allocator.free(self.obstacles);
     }
 };
 
@@ -158,7 +157,7 @@ pub const Track = struct {
     }
 
     pub fn draw(self: *Track, pos: u64) !void {
-        var list = std.ArrayList(Obstacle).init(game.allocator());
+        var list = std.ArrayList(Obstacle).init(util.allocator);
         defer list.deinit();
         // TODO less hardcoded stuff
         var offset: usize = 0;
