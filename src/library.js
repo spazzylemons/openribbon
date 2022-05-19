@@ -54,4 +54,44 @@ mergeInto(LibraryManager.library, {
         if (d == Infinity) return -1;
         return d * 1000;
     },
+
+    jsMakeRequest: function(ptr) {
+        var filename = UTF8ToString(ptr);
+        var handle = requestId++;
+        fetch(filename)
+            .then(function(result) {
+                return result.arrayBuffer();
+            })
+            .then(function (result) {
+                readyRequests[handle] = result;
+            })
+            .catch(function (e) {
+                console.error(e);
+                readyRequests[handle] = null;
+            });
+    },
+
+    jsGetRequestReady: function(handle) {
+        return handle in readyRequests;
+    },
+
+    jsGetRequestFailed: function(handle) {
+        return readyRequests[handle] == null;
+    },
+
+    jsCloseRequest: function(handle) {
+        delete readyRequests[handle];
+    },
+
+    jsGetRequestSize: function(handle) {
+        return readyRequests[handle].byteLength;
+    },
+
+    jsCopyRequestContent: function(handle, ptr) {
+        Module.HEAPU8.set(new Uint8Array(readyRequests[handle]), ptr);
+    },
+
+    roundq: function(i) {
+        return Math.round(i);
+    },
 });

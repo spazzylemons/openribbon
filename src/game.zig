@@ -28,6 +28,8 @@ fn deinitAllocator() void {
 }
 
 var audio: ?music.Audio = null;
+var track_data: ribbon.TrackData = undefined;
+var track: ?ribbon.Track = undefined;
 
 /// Initialize the game.
 pub fn init() !void {
@@ -41,11 +43,15 @@ pub fn init() !void {
     // ribbon
     try ribbon.init();
     errdefer ribbon.deinit();
+    // read track data
+    track_data = try ribbon.TrackData.parseFile("music/fresh.json");
+    errdefer track_data.deinit();
 }
 
 /// Free resources allocated by the game.
 pub fn deinit() void {
     if (audio) |a| a.deinit();
+    track_data.deinit();
     ribbon.deinit();
     renderer.deinit();
     window.deinit();
@@ -61,6 +67,7 @@ pub fn loop() !void {
     // draw some obstacles
     if (window.isKeyDown(.space) and audio == null) {
         audio = try music.Audio.init("music/fresh.mp3");
+        track = ribbon.Track{ .data = &track_data };
         try audio.?.play();
     }
     if (audio) |a| {
@@ -69,14 +76,7 @@ pub fn loop() !void {
             a.deinit();
             audio = null;
         } else {
-            const sec = @intToFloat(f32, @mod(a.getPos(), 500)) / 125;
-            const obstacles = [4]ribbon.Obstacle{
-                .{ .type = .Block, .pos = sec - 7.0 },
-                .{ .type = .Block, .pos = sec - 3.0 },
-                .{ .type = .Block, .pos = sec + 1.0 },
-                .{ .type = .Block, .pos = sec + 5.0 },
-            };
-            ribbon.render(&obstacles);
+            try track.?.draw(a.getPos());
         }
     }
     // update window

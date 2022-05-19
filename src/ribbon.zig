@@ -1,6 +1,7 @@
 const game = @import("game.zig");
 const renderer = @import("renderer.zig");
 const std = @import("std");
+const util = @import("util.zig");
 const zlm = @import("zlm");
 
 const ObstacleModel = struct {
@@ -108,3 +109,77 @@ pub fn render(obstacles: []const Obstacle) void {
     // finish drawing line
     renderLine(last_pos, 256);
 }
+
+pub const TrackData = struct {
+    const ObstacleEvent = struct {
+        time: u64,
+        type: ObstacleType,
+    };
+
+    obstacles: []ObstacleEvent,
+
+    fn obCompare(ctx: void, lhs: ObstacleEvent, rhs: ObstacleEvent) bool {
+        _ = ctx;
+        return lhs.time < rhs.time;
+    }
+
+    pub fn parse(source: []const u8) !TrackData {
+        // TODO custom file format
+        var tokens = std.json.TokenStream.init(source);
+        const self = try std.json.parse(TrackData, &tokens, .{
+            .allocator = game.allocator(),
+        });
+        errdefer self.deinit();
+        // obstacle timings should be sorted
+        std.sort.sort(ObstacleEvent, self.obstacles, {}, obCompare);
+        // everything is good
+        return self;
+    }
+
+    pub fn parseFile(filename: [:0]const u8) !TrackData {
+        const contents = try util.readFile(filename);
+        defer game.allocator().free(contents);
+        return try parse(contents);
+    }
+
+    pub fn deinit(self: TrackData) void {
+        game.allocator().free(self.obstacles);
+    }
+};
+
+pub const Track = struct {
+    data: *TrackData,
+    cursor: usize = 0,
+
+    fn getOffset(self: Track, offset: usize) ?TrackData.ObstacleEvent {
+        const index = offset + self.cursor;
+        if (index >= self.data.obstacles.len) return null;
+        return self.data.obstacles[index];
+    }
+
+    pub fn draw(self: *Track, pos: u64) !void {
+        var list = std.ArrayList(Obstacle).init(game.allocator());
+        defer list.deinit();
+        // TODO less hardcoded stuff
+        var offset: usize = 0;
+        while (self.getOffset(offset)) |obstacle| {
+            const relative = if (obstacle.time < pos)
+                @intToFloat(f32, pos - obstacle.time) / -50.0
+            else
+                @intToFloat(f32, obstacle.time - pos) / 50.0;
+            if (relative < -32.0) {
+                self.cursor += 1;
+                continue;
+            }
+            if (relative <= 32.0) {
+                try list.append(.{
+                    .type = obstacle.type,
+                    .pos = relative,
+                });
+            }
+            offset += 1;
+        }
+
+        render(list.items);
+    }
+};
