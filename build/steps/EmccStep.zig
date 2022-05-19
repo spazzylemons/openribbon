@@ -71,6 +71,8 @@ fn make(step: *Step) anyerror!void {
         self.obj.getPath(self.b),
         // optimize size
         "-Os",
+        // https://github.com/emscripten-core/emscripten/issues/16656
+        "-sMINIFY_HTML=0",
         // output to web folder in zig-out
         "-o",
         self.b.pathJoin(&.{ self.dir.getPath(self.b), self.name }),
