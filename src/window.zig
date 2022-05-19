@@ -75,6 +75,7 @@ pub fn init() !void {
     try SDL.init(.{
         .video = true,
         .audio = !util.is_wasm,
+        .timer = true,
     });
     errdefer SDL.quit();
     // expecting GLES3
@@ -160,4 +161,8 @@ pub fn isKeyDown(key: SDL.Scancode) bool {
 /// Return true if the window has been requested to close.
 pub fn shouldClose() bool {
     return should_close;
+}
+
+pub fn getTicks() u64 {
+    return SDL.getTicks64();
 }

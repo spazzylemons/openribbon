@@ -33,6 +33,7 @@ mergeInto(LibraryManager.library, {
         };
     
         _jsAudioPlay = function(handle) {
+            // TODO - audio playback is delayed
             handles.slots[handle].audio.play();
         };
     

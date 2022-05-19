@@ -1,3 +1,4 @@
+const Chart = @import("Chart.zig");
 const renderer = @import("renderer.zig");
 const std = @import("std");
 const util = @import("util.zig");
@@ -44,6 +45,7 @@ var block_model: ObstacleModel = undefined;
 var pit_model: ObstacleModel = undefined;
 var loop_model: ObstacleModel = undefined;
 var wave_model: ObstacleModel = undefined;
+var marker_model: renderer.Model = undefined;
 
 const WOBBLE = 0.05;
 
@@ -56,6 +58,8 @@ pub fn init() !void {
     errdefer loop_model.deinit();
     wave_model = try ObstacleModel.load("ribbon/w.bin");
     errdefer wave_model.deinit();
+    marker_model = try renderer.Model.loadEmbedded(util.allocator, "ribbon/marker.bin");
+    errdefer marker_model.deinit(util.allocator);
 }
 
 pub fn deinit() void {
@@ -63,6 +67,7 @@ pub fn deinit() void {
     pit_model.deinit();
     loop_model.deinit();
     wave_model.deinit();
+    marker_model.deinit(util.allocator);
 }
 
 pub const ObstacleType = enum { Block, Pit, Loop, Wave };
@@ -80,6 +85,10 @@ fn renderLine(from: f32, to: f32) void {
     );
 }
 
+const RIBBON_RADIUS = 256;
+
+pub const PLAYER_POS = -6.0;
+
 /// Render obstacles. Must be in sorted order from left to right.
 pub fn render(obstacles: []const Obstacle) void {
     // set seed for entire obstacle group
@@ -89,7 +98,7 @@ pub fn render(obstacles: []const Obstacle) void {
     // set wobble for ribbon
     renderer.setWobble(WOBBLE);
     // draw each obstacle
-    var last_pos: f32 = -256;
+    var last_pos: f32 = -RIBBON_RADIUS;
     for (obstacles) |obstacle| {
         // select the obstacle
         const model = switch (obstacle.type) {
@@ -106,79 +115,7 @@ pub fn render(obstacles: []const Obstacle) void {
         model.model.render(zlm.vec3(obstacle.pos, 0, 0), zlm.Vec3.zero);
     }
     // finish drawing line
-    renderLine(last_pos, 256);
+    renderLine(last_pos, RIBBON_RADIUS);
+    // draw the marker
+    marker_model.render(zlm.vec3(PLAYER_POS, 0, 0), zlm.Vec3.zero);
 }
-
-pub const TrackData = struct {
-    const ObstacleEvent = struct {
-        time: u64,
-        type: ObstacleType,
-    };
-
-    obstacles: []ObstacleEvent,
-
-    fn obCompare(ctx: void, lhs: ObstacleEvent, rhs: ObstacleEvent) bool {
-        _ = ctx;
-        return lhs.time < rhs.time;
-    }
-
-    pub fn parse(source: []const u8) !TrackData {
-        // TODO custom file format
-        var tokens = std.json.TokenStream.init(source);
-        const self = try std.json.parse(TrackData, &tokens, .{
-            .allocator = util.allocator,
-        });
-        errdefer self.deinit();
-        // obstacle timings should be sorted
-        std.sort.sort(ObstacleEvent, self.obstacles, {}, obCompare);
-        // everything is good
-        return self;
-    }
-
-    pub fn parseFile(filename: [:0]const u8) !TrackData {
-        const contents = try util.readFile(filename);
-        defer util.allocator.free(contents);
-        return try parse(contents);
-    }
-
-    pub fn deinit(self: TrackData) void {
-        util.allocator.free(self.obstacles);
-    }
-};
-
-pub const Track = struct {
-    data: *TrackData,
-    cursor: usize = 0,
-
-    fn getOffset(self: Track, offset: usize) ?TrackData.ObstacleEvent {
-        const index = offset + self.cursor;
-        if (index >= self.data.obstacles.len) return null;
-        return self.data.obstacles[index];
-    }
-
-    pub fn draw(self: *Track, pos: u64) !void {
-        var list = std.ArrayList(Obstacle).init(util.allocator);
-        defer list.deinit();
-        // TODO less hardcoded stuff
-        var offset: usize = 0;
-        while (self.getOffset(offset)) |obstacle| {
-            const relative = if (obstacle.time < pos)
-                @intToFloat(f32, pos - obstacle.time) / -50.0
-            else
-                @intToFloat(f32, obstacle.time - pos) / 50.0;
-            if (relative < -32.0) {
-                self.cursor += 1;
-                continue;
-            }
-            if (relative <= 32.0) {
-                try list.append(.{
-                    .type = obstacle.type,
-                    .pos = relative,
-                });
-            }
-            offset += 1;
-        }
-
-        render(list.items);
-    }
-};

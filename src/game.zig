@@ -1,3 +1,5 @@
+const ActiveChart = @import("ActiveChart.zig");
+const Chart = @import("Chart.zig");
 const music = @import("music.zig");
 const ribbon = @import("ribbon.zig");
 const renderer = @import("renderer.zig");
@@ -6,8 +8,9 @@ const window = @import("window.zig");
 const zlm = @import("zlm");
 
 var audio: ?music.Audio = null;
-var track_data: ribbon.TrackData = undefined;
-var track: ?ribbon.Track = undefined;
+var chart: Chart = undefined;
+var active: ActiveChart = undefined;
+var time_to_start: ?u64 = undefined;
 
 /// Initialize the game.
 pub fn init() !void {
@@ -22,14 +25,14 @@ pub fn init() !void {
     try ribbon.init();
     errdefer ribbon.deinit();
     // read track data
-    track_data = try ribbon.TrackData.parseFile("music/fresh.json");
-    errdefer track_data.deinit();
+    chart = try Chart.load("music/fresh.json");
+    errdefer chart.deinit();
 }
 
 /// Free resources allocated by the game.
 pub fn deinit() void {
     if (audio) |a| a.deinit();
-    track_data.deinit();
+    chart.deinit();
     ribbon.deinit();
     renderer.deinit();
     window.deinit();
@@ -45,16 +48,28 @@ pub fn loop() !void {
     // draw some obstacles
     if (window.isKeyDown(.space) and audio == null) {
         audio = try music.Audio.init("music/fresh.mp3");
-        track = ribbon.Track{ .data = &track_data };
-        try audio.?.play();
+        active = ActiveChart{ .chart = &chart };
+        // give a second before the song starts
+        time_to_start = window.getTicks() + 1000;
     }
     if (audio) |a| {
-        if (a.getPos() >= (try a.getDuration())) {
-            // audio is finished, stop playing it
-            a.deinit();
-            audio = null;
-        } else {
-            try track.?.draw(a.getPos());
+        if (time_to_start) |t| {
+            const now = window.getTicks();
+            if (now < t) {
+                try active.render(-@intCast(i64, t - now));
+            } else {
+                time_to_start = null;
+                try a.play();
+            }
+        }
+        if (time_to_start == null) {
+            if (a.getPos() >= (try a.getDuration())) {
+                // audio is finished, stop playing it
+                a.deinit();
+                audio = null;
+            } else {
+                try active.render(@intCast(i64, a.getPos()));
+            }
         }
     }
     // update window
