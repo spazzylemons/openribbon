@@ -78,6 +78,9 @@ fn make(step: *Step) anyerror!void {
         "-Os",
         // https://github.com/emscripten-core/emscripten/issues/16656
         "-sMINIFY_HTML=0",
+        // use closure compiler for js optimization
+        "--closure",
+        "1",
         // output to web folder in zig-out
         "-o",
         self.b.pathJoin(&.{ self.dir.getPath(self.b), self.name }),
@@ -92,13 +95,14 @@ fn make(step: *Step) anyerror!void {
         self.prerun.getPath(self.b),
         // link WebGL
         "-lGL",
-        // link SDL2
-        "-sUSE_SDL=2",
         // require WebGL
         "-sMAX_WEBGL_VERSION=1",
         "-sMIN_WEBGL_VERSION=1",
         // use asyncify
         "-sASYNCIFY",
+        // zig allows us to gracefully handle OOM, so we don't want to abort
+        // on an out-of-memory error.
+        "-sABORTING_MALLOC=0",
     }, self.b.allocator);
 
     const term = try child.spawnAndWait();

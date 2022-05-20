@@ -57,29 +57,20 @@
         </div>
         <!-- browser checks and emscripten setup -->
         <script type="text/javascript">
-            // show an error message
-            function showError(message) {
-                document.getElementById('error-message').textContent = message;
-                document.getElementById('runtime-error').hidden = false;
-            }
             // display a notice for firefox users
             if (navigator.userAgent.includes('Firefox')) {
                 document.getElementById('firefox-warning').hidden = false;
             }
             // set up runtime errors to display in the error box
             window.addEventListener('error', function(e) {
-                showError(e.error.toString());
+                document.getElementById('error-message').textContent = e.error.toString();
+                document.getElementById('runtime-error').hidden = false;
                 return false;
             });
-            // get the WebGL context, explicitly turning off antialiasing
-            var webgl = document.getElementById('canvas').getContext('webgl', {
-                antialias: false,
-            });
-            // check WebGL availability
-            if (!webgl) {
-                // show the message
-                showError('WebGL is required to run the game.');
-            }
+            // get the canvas
+            var canvas = document.getElementById('canvas');
+            // set up module with proper canvas
+            var Module = { canvas: canvas };
         </script>
         {{{ SCRIPT }}}
     </body>

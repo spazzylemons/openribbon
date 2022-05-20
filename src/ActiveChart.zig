@@ -1,7 +1,6 @@
 const Chart = @import("Chart.zig");
 const music = @import("music.zig");
 const ribbon = @import("ribbon.zig");
-const SDL = @import("sdl2");
 const std = @import("std");
 const util = @import("util.zig");
 const window = @import("window.zig");
@@ -57,11 +56,11 @@ pub fn update(self: *ActiveChart, pos: i64) void {
             self.play_cursor += 1;
             continue;
         }
-        const key: SDL.Scancode = switch (next_obstacle.type) {
-            .Block => .a,
-            .Pit => .z,
-            .Loop => .apostrophe,
-            .Wave => .slash,
+        const key: window.KeyCode = switch (next_obstacle.type) {
+            .Block => .block,
+            .Pit => .pit,
+            .Loop => .loop,
+            .Wave => .wave,
         };
         // TODO limit inputs so that you can't just spam every button press
         if (window.isKeyDown(key)) {

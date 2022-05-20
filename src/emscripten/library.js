@@ -10,6 +10,71 @@ mergeInto(LibraryManager.library, {
         throw 'panic: ' + UTF8ToString(ptr, len);
     },
 
+    jsInitWebGl: function(major, minor) {
+        const canvas = Module['canvas'];
+        const webgl = canvas.getContext('webgl', { antialias: false });
+        if (!webgl) return -1;
+        const ctx = GL.createContext(canvas, {
+            majorVersion: major,
+            minorVersion: minor,
+        });
+        GL.makeContextCurrent(ctx);
+        return 0;
+    },
+
+    jsGetCanvasSize: function(width, height) {
+        const canvas = Module['canvas'];
+        Module['HEAP32'][width >> 2] = canvas.width;
+        Module['HEAP32'][height >> 2] = canvas.height;
+    },
+
+    jsSetCanvasSize: function(width, height) {
+        const canvas = Module['canvas'];
+        canvas.width = width;
+        canvas.height = height;
+    },
+
+    jsGetKeyDown: function() {
+        const values = {
+            'KeyA': 0,
+            'KeyZ': 1,
+            'Quote': 2,
+            'Slash': 3,
+            'Space': 4,
+        };
+        const down = {};
+
+        document.addEventListener('keydown', e => {
+            if (e.code in values) {
+                console.log('down', e.code);
+                down[values[e.code]] = 0;
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', e => {
+            if (e.code in values) {
+                console.log('up', e.code);
+                delete down[values[e.code]];
+                e.preventDefault();
+            }
+        });
+
+        _jsGetKeyDown = function(index) {
+            return index in down;
+        };
+    },
+    jsGetKeyDown__postset: '_jsGetKeyDown();',
+
+    jsGetTicks: function() {
+        const start = Date.now();
+
+        _jsGetTicks = function() {
+            return Date.now() - start;
+        }
+    },
+    jsGetTicks__postset: '_jsGetTicks();',
+
     $audioLib: function() {
         const handles = new ResourceManager();
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -104,7 +169,7 @@ mergeInto(LibraryManager.library, {
     
         _jsReqRead = function(handle, dst) {
             const src = new Uint8Array(handles.slots[handle].value);
-            Module.HEAPU8.set(src, dst);
+            Module['HEAPU8'].set(src, dst);
         };
     },
     $requestLib__postset: 'requestLib();',
