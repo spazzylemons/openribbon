@@ -53,10 +53,11 @@ pub fn loop() !void {
         time_to_start = window.getTicks() + 1000;
     }
     if (audio) |a| {
+        var game_time: ?i64 = null;
         if (time_to_start) |t| {
             const now = window.getTicks();
             if (now < t) {
-                try active.render(-@intCast(i64, t - now));
+                game_time = -@intCast(i64, t - now);
             } else {
                 time_to_start = null;
                 try a.play();
@@ -68,8 +69,12 @@ pub fn loop() !void {
                 a.deinit();
                 audio = null;
             } else {
-                try active.render(@intCast(i64, a.getPos()));
+                game_time = @intCast(i64, a.getPos());
             }
+        }
+        if (game_time) |gt| {
+            active.update(gt);
+            try active.render(gt);
         }
     }
     // update window

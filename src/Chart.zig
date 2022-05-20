@@ -9,6 +9,7 @@ pub const Obstacle = struct {
     type: ribbon.ObstacleType,
 };
 
+bpm: f32,
 obstacles: []Obstacle,
 
 fn obCompare(ctx: void, lhs: Obstacle, rhs: Obstacle) bool {
