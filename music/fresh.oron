@@ -1,0 +1,237 @@
+[[ fresh from fnf ]]
+
+bpm=120.0
+
+[[ intro ]]
+
+obstacle[time=0 type="p"]
+obstacle[time=500 type="w"]
+obstacle[time=1250 type="p"]
+obstacle[time=1500 type="p"]
+
+obstacle[time=2000 type="w"]
+obstacle[time=2500 type="p"]
+obstacle[time=3250 type="w"]
+obstacle[time=3500 type="p"]
+
+obstacle[time=4000 type="p"]
+obstacle[time=4500 type="b"]
+obstacle[time=5250 type="p"]
+obstacle[time=5500 type="b"]
+
+obstacle[time=6250 type="w"]
+obstacle[time=6875 type="w"]
+obstacle[time=7500 type="w"]
+obstacle[time=7750 type="l"]
+
+[[ verse 1 ]]
+
+obstacle[time=8250 type="b"]
+obstacle[time=8500 type="p"]
+obstacle[time=9000 type="b"]
+obstacle[time=9750 type="w"]
+
+obstacle[time=10250 type="b"]
+obstacle[time=10500 type="w"]
+obstacle[time=11000 type="b"]
+obstacle[time=11750 type="p"]
+
+obstacle[time=12250 type="l"]
+obstacle[time=12750 type="p"]
+obstacle[time=13000 type="p"]
+obstacle[time=13750 type="w"]
+
+obstacle[time=14250 type="l"]
+obstacle[time=14750 type="w"]
+obstacle[time=15000 type="w"]
+
+obstacle[time=16250 type="b"]
+obstacle[time=16750 type="p"]
+obstacle[time=17000 type="p"]
+obstacle[time=17500 type="l"]
+
+obstacle[time=18250 type="w"]
+obstacle[time=18750 type="b"]
+obstacle[time=19000 type="b"]
+obstacle[time=19500 type="l"]
+
+obstacle[time=20000 type="w"]
+obstacle[time=20250 type="p"]
+obstacle[time=20750 type="w"]
+obstacle[time=21000 type="l"]
+obstacle[time=21750 type="b"]
+
+obstacle[time=22000 type="w"]
+obstacle[time=22250 type="p"]
+obstacle[time=22750 type="w"]
+obstacle[time=23000 type="l"]
+obstacle[time=23750 type="b"]
+
+obstacle[time=24000 type="p"]
+obstacle[time=24500 type="l"]
+obstacle[time=25000 type="p"]
+obstacle[time=25250 type="p"]
+obstacle[time=25500 type="l"]
+
+obstacle[time=26000 type="p"]
+obstacle[time=26250 type="b"]
+obstacle[time=26500 type="p"]
+obstacle[time=26750 type="b"]
+obstacle[time=27000 type="p"]
+obstacle[time=27250 type="b"]
+obstacle[time=27500 type="w"]
+
+obstacle[time=28000 type="p"]
+obstacle[time=28500 type="w"]
+obstacle[time=29000 type="p"]
+obstacle[time=29250 type="p"]
+obstacle[time=29500 type="w"]
+
+obstacle[time=30000 type="p"]
+obstacle[time=30250 type="b"]
+obstacle[time=30500 type="p"]
+obstacle[time=30750 type="b"]
+obstacle[time=31000 type="p"]
+obstacle[time=31250 type="b"]
+obstacle[time=31500 type="l"]
+
+obstacle[time=32500 type="b"]
+obstacle[time=33000 type="p"]
+obstacle[time=33250 type="p"]
+obstacle[time=33500 type="b"]
+obstacle[time=33750 type="l"]
+
+obstacle[time=34250 type="b"]
+obstacle[time=34750 type="p"]
+obstacle[time=35000 type="b"]
+obstacle[time=35500 type="p"]
+
+obstacle[time=36500 type="w"]
+obstacle[time=37000 type="p"]
+obstacle[time=37250 type="p"]
+obstacle[time=37500 type="w"]
+obstacle[time=37750 type="b"]
+
+obstacle[time=38250 type="l"]
+obstacle[time=38750 type="w"]
+obstacle[time=39000 type="l"]
+obstacle[time=39500 type="w"]
+
+[[ verse 2 ]]
+
+obstacle[time=40250 type="b"]
+obstacle[time=40500 type="p"]
+obstacle[time=41000 type="b"]
+obstacle[time=41500 type="w"]
+obstacle[time=41750 type="w"]
+
+obstacle[time=42250 type="b"]
+obstacle[time=42500 type="w"]
+obstacle[time=43000 type="b"]
+obstacle[time=43500 type="p"]
+obstacle[time=43750 type="p"]
+
+obstacle[time=44250 type="l"]
+obstacle[time=44750 type="p"]
+obstacle[time=45000 type="p"]
+obstacle[time=45750 type="w"]
+
+obstacle[time=46250 type="l"]
+obstacle[time=46750 type="w"]
+obstacle[time=47000 type="w"]
+obstacle[time=47750 type="w"]
+
+obstacle[time=48250 type="b"]
+obstacle[time=48750 type="p"]
+obstacle[time=49000 type="p"]
+obstacle[time=49750 type="l"]
+
+obstacle[time=50250 type="w"]
+obstacle[time=50750 type="b"]
+obstacle[time=51000 type="b"]
+obstacle[time=51750 type="l"]
+
+obstacle[time=52000 type="w"]
+obstacle[time=52250 type="p"]
+obstacle[time=52500 type="p"]
+obstacle[time=52750 type="w"]
+obstacle[time=53000 type="l"]
+obstacle[time=53750 type="b"]
+
+obstacle[time=54000 type="w"]
+obstacle[time=54250 type="p"]
+obstacle[time=54500 type="p"]
+obstacle[time=54750 type="w"]
+obstacle[time=55000 type="l"]
+obstacle[time=55750 type="b"]
+
+obstacle[time=56000 type="p"]
+obstacle[time=56500 type="l"]
+obstacle[time=57000 type="p"]
+obstacle[time=57250 type="p"]
+obstacle[time=57500 type="l"]
+
+obstacle[time=58000 type="p"]
+obstacle[time=58250 type="b"]
+obstacle[time=58500 type="p"]
+obstacle[time=58750 type="b"]
+obstacle[time=59000 type="p"]
+obstacle[time=59250 type="b"]
+obstacle[time=59500 type="w"]
+
+obstacle[time=60000 type="p"]
+obstacle[time=60500 type="w"]
+obstacle[time=61000 type="p"]
+obstacle[time=61250 type="p"]
+obstacle[time=61500 type="w"]
+
+obstacle[time=62000 type="p"]
+obstacle[time=62250 type="b"]
+obstacle[time=62500 type="p"]
+obstacle[time=62750 type="b"]
+obstacle[time=63000 type="p"]
+obstacle[time=63250 type="b"]
+obstacle[time=63500 type="l"]
+
+obstacle[time=64500 type="b"]
+obstacle[time=65000 type="p"]
+obstacle[time=65250 type="p"]
+obstacle[time=65500 type="b"]
+obstacle[time=65750 type="l"]
+
+obstacle[time=66250 type="b"]
+obstacle[time=66750 type="p"]
+obstacle[time=67000 type="b"]
+obstacle[time=67500 type="p"]
+
+obstacle[time=68500 type="w"]
+obstacle[time=69000 type="p"]
+obstacle[time=69250 type="p"]
+obstacle[time=69500 type="w"]
+obstacle[time=69750 type="b"]
+
+obstacle[time=70250 type="l"]
+obstacle[time=70750 type="w"]
+obstacle[time=71000 type="l"]
+obstacle[time=71500 type="w"]
+
+[[ outro ]]
+
+obstacle[time=72000 type="p"]
+obstacle[time=72500 type="w"]
+obstacle[time=73250 type="p"]
+obstacle[time=73500 type="p"]
+
+obstacle[time=74000 type="w"]
+obstacle[time=74500 type="p"]
+obstacle[time=75250 type="w"]
+obstacle[time=75500 type="p"]
+
+obstacle[time=76000 type="p"]
+obstacle[time=76500 type="b"]
+obstacle[time=77250 type="p"]
+obstacle[time=77500 type="b"]
+
+obstacle[time=78250 type="w"]
+obstacle[time=78875 type="w"]
+obstacle[time=79500 type="w"]

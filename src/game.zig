@@ -25,7 +25,7 @@ pub fn init() !void {
     try ribbon.init();
     errdefer ribbon.deinit();
     // read track data
-    chart = try Chart.load("music/fresh.json");
+    chart = try Chart.load("music/fresh.oron");
     errdefer chart.deinit();
 }
 

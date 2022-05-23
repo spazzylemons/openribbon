@@ -1,3 +1,4 @@
+const oron = @import("oron.zig");
 const ribbon = @import("ribbon.zig");
 const std = @import("std");
 const util = @import("util.zig");
@@ -12,6 +13,13 @@ pub const Obstacle = struct {
 bpm: f32,
 obstacles: []Obstacle,
 
+const obstacle_map = std.ComptimeStringMap(ribbon.ObstacleType, .{
+    .{ "b", .Block },
+    .{ "p", .Pit },
+    .{ "l", .Loop },
+    .{ "w", .Wave },
+});
+
 fn obCompare(ctx: void, lhs: Obstacle, rhs: Obstacle) bool {
     _ = ctx;
     return lhs.time < rhs.time;
@@ -21,15 +29,27 @@ pub fn load(filename: [:0]const u8) !Chart {
     const source = try util.readFile(filename);
     defer util.allocator.free(source);
 
-    var tokens = std.json.TokenStream.init(source);
+    var chart = try oron.parse(source);
+    defer chart.deinit();
 
-    const self = try std.json.parse(Chart, &tokens, .{
-        .allocator = util.allocator,
-    });
-    errdefer self.deinit();
+    const bpm = try chart.getAttr("bpm", .Float);
+    var obstacles = std.ArrayList(Obstacle).init(util.allocator);
+    defer obstacles.deinit();
 
-    std.sort.sort(Obstacle, self.obstacles, {}, obCompare);
-    return self;
+    for (chart.children.items) |child| {
+        if (std.mem.eql(u8, child.tag, "obstacle")) {
+            const time = try std.math.cast(u64, try child.getAttr("time", .Integer));
+            const ty = obstacle_map.get(try child.getAttr("type", .String)) orelse return error.InvalidObstacle;
+            try obstacles.append(.{ .time = time, .type = ty });
+        }
+    }
+
+    std.sort.sort(Obstacle, obstacles.items, {}, obCompare);
+
+    return Chart{
+        .bpm = bpm,
+        .obstacles = obstacles.toOwnedSlice(),
+    };
 }
 
 pub fn deinit(self: Chart) void {

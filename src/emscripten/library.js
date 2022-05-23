@@ -192,7 +192,7 @@ mergeInto(LibraryManager.library, {
     jsReqRead: function() {},
     jsReqRead__deps: ['$requestLib'],
 
-    roundq: function(i) {
-        return Math.round(i);
+    jsParseFloat: function(ptr, len) {
+        return +UTF8ToString(ptr, len);
     },
 });
