@@ -41,3 +41,9 @@ pub const shouldClose = platform.shouldClose;
 
 /// Get the number of ticks that have elapsed since the program began.
 pub const getTicks = platform.getTicks;
+
+/// A key and its time of being pressed.
+pub const PressedKey = struct { id: platform.KeyCode, time: u32 };
+
+/// Get the next pressed key and when it was pressed.
+pub const nextPressedKey = platform.nextPressedKey;

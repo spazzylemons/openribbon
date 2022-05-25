@@ -2,12 +2,35 @@ const oron = @import("oron.zig");
 const ribbon = @import("ribbon.zig");
 const std = @import("std");
 const util = @import("util.zig");
+const window = @import("window.zig");
 
 const Chart = @This();
 
+const LENIANCE = 100;
+
 pub const Obstacle = struct {
-    time: u64,
+    time: i64,
     type: ribbon.ObstacleType,
+
+    /// The minimum time that the obstacle may be cleared.
+    pub fn minTime(self: Obstacle) i64 {
+        return self.time - LENIANCE;
+    }
+
+    /// The maximum time thta the obstacle may be cleared.
+    pub fn maxTime(self: Obstacle) i64 {
+        return self.time + LENIANCE;
+    }
+
+    /// The key that must be pressed to clear the obstacle.
+    pub fn key(self: Obstacle) window.KeyCode {
+        return switch (self.type) {
+            .Block => .block,
+            .Pit => .pit,
+            .Loop => .loop,
+            .Wave => .wave,
+        };
+    }
 };
 
 bpm: f32,
@@ -36,15 +59,19 @@ pub fn load(filename: [:0]const u8) !Chart {
     var obstacles = std.ArrayList(Obstacle).init(util.allocator);
     defer obstacles.deinit();
 
+    var min_time: i64 = -1;
+
     for (chart.children.items) |child| {
         if (std.mem.eql(u8, child.tag, "obstacle")) {
-            const time = try std.math.cast(u64, try child.getAttr("time", .Integer));
-            const ty = obstacle_map.get(try child.getAttr("type", .String)) orelse return error.InvalidObstacle;
+            const time = try child.getAttr("time", .Integer);
+            if (time <= min_time) {
+                return error.InvalidChart;
+            }
+            min_time = time;
+            const ty = obstacle_map.get(try child.getAttr("type", .String)) orelse return error.InvalidChart;
             try obstacles.append(.{ .time = time, .type = ty });
         }
     }
-
-    std.sort.sort(Obstacle, obstacles.items, {}, obCompare);
 
     return Chart{
         .bpm = bpm,

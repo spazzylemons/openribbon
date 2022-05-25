@@ -1,20 +1,25 @@
 const music = @import("../music.zig");
+const platform = @import("../platform.zig");
 const renderer = @import("../renderer.zig");
 const SDL = @import("sdl2");
 const std = @import("std");
 const util = @import("../util.zig");
+const window = @import("../window.zig");
 
 const c = util.c;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const allocator = gpa.allocator();
 
-var window: SDL.Window = undefined;
+var window_object: SDL.Window = undefined;
 var should_close: bool = undefined;
 
 var channel: SDL.c.SDL_AudioDeviceID = undefined;
 var playing_tracks: std.ArrayList(AudioHandle) = undefined;
 var mix_buffer: []i16 = undefined;
+
+var press_queue: std.TailQueue(window.PressedKey) = .{};
+const PressNode = @TypeOf(press_queue).Node;
 
 fn removeTrack(handle: AudioHandle) void {
     for (playing_tracks.items) |track, i| {
@@ -100,6 +105,9 @@ pub fn deinitIo() void {
     playing_tracks.deinit();
     util.allocator.free(mix_buffer);
     SDL.quit();
+    while (press_queue.pop()) |node| {
+        allocator.destroy(node);
+    }
 }
 
 pub fn initWebGl(major: c_int, minor: c_int) !void {
@@ -109,7 +117,7 @@ pub fn initWebGl(major: c_int, minor: c_int) !void {
 }
 
 pub fn createWindow(width: c_int, height: c_int, title: [:0]const u8) !void {
-    window = try SDL.createWindow(
+    window_object = try SDL.createWindow(
         title,
         .centered,
         .centered,
@@ -119,7 +127,7 @@ pub fn createWindow(width: c_int, height: c_int, title: [:0]const u8) !void {
     );
     errdefer destroyWindow();
     // create a context, discard it as it is automatically set as current
-    _ = try SDL.gl.createContext(window);
+    _ = try SDL.gl.createContext(window_object);
     // set vsync
     // TODO how can we set a custom frame rate?
     try SDL.gl.setSwapInterval(.vsync);
@@ -128,27 +136,40 @@ pub fn createWindow(width: c_int, height: c_int, title: [:0]const u8) !void {
 }
 
 pub fn destroyWindow() void {
-    window.destroy();
+    window_object.destroy();
 }
 
 pub fn getWindowSize() struct { width: c_int, height: c_int } {
-    const size = window.getSize();
+    const size = window_object.getSize();
     return .{ .width = size.width, .height = size.height };
 }
 
-pub fn pollEvents() void {
-    SDL.gl.swapWindow(window);
-    // handle events
-    while (SDL.pollEvent()) |event| switch (event) {
-        .window => |e| {
-            switch (e.type) {
-                // when the window is requested to close, set should_close
-                .close => should_close = true,
-                .size_changed => renderer.updateResolution(),
-                else => {},
+const used_keys = blk: {
+    var set = std.bit_set.StaticBitSet(SDL.c.SDL_NUM_SCANCODES).initEmpty();
+    inline for (@typeInfo(KeyCode).Enum.fields) |field| {
+        set.set(field.value);
+    }
+    break :blk set;
+};
+
+pub fn pollEvents() !void {
+    SDL.gl.swapWindow(window_object);
+    // handle events - not using wrapper to minimize overhead
+    var event: SDL.c.SDL_Event = undefined;
+    while (SDL.c.SDL_PollEvent(&event) != 0) switch (event.type) {
+        SDL.c.SDL_WINDOWEVENT => switch (event.window.event) {
+            SDL.c.SDL_WINDOWEVENT_CLOSE => should_close = true,
+            SDL.c.SDL_WINDOWEVENT_SIZE_CHANGED => renderer.updateResolution(),
+            else => {},
+        },
+        SDL.c.SDL_KEYDOWN => {
+            if (used_keys.isSet(@intCast(usize, event.key.keysym.scancode))) {
+                const node = try allocator.create(PressNode);
+                node.data.id = @intToEnum(KeyCode, event.key.keysym.scancode);
+                node.data.time = event.key.timestamp;
+                press_queue.prepend(node);
             }
         },
-
         else => {},
     };
 }
@@ -281,4 +302,13 @@ pub fn readFile(filename: [:0]const u8) ![]u8 {
     try file.reader().readNoEof(buf);
     // return the buffer
     return buf;
+}
+
+pub fn nextPressedKey() ?window.PressedKey {
+    if (press_queue.pop()) |node| {
+        const result = node.data;
+        allocator.destroy(node);
+        return result;
+    }
+    return null;
 }

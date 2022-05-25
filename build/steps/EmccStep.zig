@@ -103,6 +103,8 @@ fn make(step: *Step) anyerror!void {
         // zig allows us to gracefully handle OOM, so we don't want to abort
         // on an out-of-memory error.
         "-sABORTING_MALLOC=0",
+        // specify web target to avoid generating node compat
+        "-sENVIRONMENT=web",
     }, self.b.allocator);
 
     const term = try child.spawnAndWait();

@@ -47,20 +47,9 @@
         <!-- canvas to render to -->
         <div id="container">
             <canvas id="canvas"></canvas>
-            <div id="firefox-warning" hidden>
-                <strong>
-                    Firefox has <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=587465">known issues</a>
-                    with audio precision, so gameplay might be choppy. Consider using
-                    a Chromium-based browser for the best experience. Sorry!
-                </strong>
-            </div>
         </div>
-        <!-- browser checks and emscripten setup -->
+        <!-- emscripten setup -->
         <script type="text/javascript">
-            // display a notice for firefox users
-            if (navigator.userAgent.includes('Firefox')) {
-                document.getElementById('firefox-warning').hidden = false;
-            }
             // set up runtime errors to display in the error box
             window.addEventListener('error', function(e) {
                 document.getElementById('error-message').textContent = e.error.toString();

@@ -1,10 +1,13 @@
+const platform = @import("../platform.zig");
 const std = @import("std");
 const util = @import("../util.zig");
+const window = @import("../window.zig");
 
 extern fn jsInitWebGl(major: i32, minor: i32) i32;
 extern fn jsGetCanvasSize(width: *i32, height: *i32) void;
 extern fn jsSetCanvasSize(width: i32, height: i32) void;
 extern fn jsGetKeyDown(index: u32) i32;
+extern fn jsNextPressedKey(id_ptr: *u8, time_ptr: *u32) i32;
 extern fn jsGetTicks() u64;
 
 extern fn jsAudioOpen(src: [*:0]const u8) i32;
@@ -61,7 +64,7 @@ pub fn getWindowSize() struct { width: c_int, height: c_int } {
     return .{ .width = width, .height = height };
 }
 
-pub fn pollEvents() void {
+pub fn pollEvents() !void {
     // no-op
 }
 
@@ -125,4 +128,11 @@ pub fn readFile(filename: [:0]const u8) ![]u8 {
     jsReqRead(handle, buf.ptr);
     // done here
     return buf;
+}
+
+pub fn nextPressedKey() ?window.PressedKey {
+    var id: u8 = undefined;
+    var time: u32 = undefined;
+    if (jsNextPressedKey(&id, &time) == 0) return null;
+    return window.PressedKey{ .id = @intToEnum(KeyCode, id), .time = time };
 }

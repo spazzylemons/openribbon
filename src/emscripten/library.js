@@ -34,163 +34,94 @@ mergeInto(LibraryManager.library, {
         canvas.height = height;
     },
 
-    jsGetKeyDown: function() {
-        const values = {
-            'KeyA': 0,
-            'KeyZ': 1,
-            'Quote': 2,
-            'Slash': 3,
-            'Space': 4,
-        };
-        const down = {};
-
-        document.addEventListener('keydown', e => {
-            if (e.code in values) {
-                console.log('down', e.code);
-                down[values[e.code]] = 0;
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('keyup', e => {
-            if (e.code in values) {
-                console.log('up', e.code);
-                delete down[values[e.code]];
-                e.preventDefault();
-            }
-        });
-
-        _jsGetKeyDown = function(index) {
-            return index in down;
-        };
+    jsGetKeyDown: function(code) {
+        return code in keysDown;
     },
-    jsGetKeyDown__postset: '_jsGetKeyDown();',
+
+    jsNextPressedKey: function(idPtr, timePtr) {
+        if (!pressedQueue.length) return 0;
+        const result = pressedQueue.shift();
+        Module['HEAPU8'][idPtr] = result.id;
+        Module['HEAPU32'][timePtr >> 2] = result.time;
+        return 1;
+    },
 
     jsGetTicks: function() {
-        const start = Date.now();
-
-        _jsGetTicks = function() {
-            return Date.now() - start;
-        }
+        return Date.now() - dateEpoch;
     },
-    jsGetTicks__postset: '_jsGetTicks();',
 
-    $audioLib: function() {
-        const handles = new ResourceManager();
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContext();
-
-        _jsAudioOpen = function(src) {
-            const audio = new Audio(UTF8ToString(src));
-            const track = ctx.createMediaElementSource(audio);
-            track.connect(ctx.destination);
-            const handle = handles.open({ ready: false, track });
-            audio.load();
-            audio.addEventListener('canplaythrough', () => {
-                handles.slots[handle].ready = true;
-            });
-            return handle;
-        };
-
-        _jsAudioReady = function(handle) {
-            return handles.slots[handle].ready;
-        };
-    
-        _jsAudioClose = function(handle) {
-            handles.slots[handle].track.mediaElement.pause();
-            handles.slots[handle].track.disconnect();
-            handles.close(handle);
-        };
-    
-        _jsAudioPlay = function(handle) {
-            handles.slots[handle].track.mediaElement.play();
-        };
-    
-        _jsAudioTell = function(handle) {
-            // TODO on firefox this updates infrequently (works well on chromium)
-            return handles.slots[handle].track.mediaElement.currentTime * 1000;
-        };
-    
-        _jsAudioStat = function(handle) {
-            const d = handles.slots[handle].track.mediaElement.duration;
-            // if the media is streaming, duration is Infinity
-            if (d === Infinity) return -1;
-            return d * 1000;
-        };
+    jsAudioOpen: function(src) {
+        const audio = new Audio(UTF8ToString(src));
+        const track = audioCtx.createMediaElementSource(audio);
+        track.connect(audioCtx.destination);
+        const handle = audioHandles.open({ ready: false, track, time: 0 });
+        audio.load();
+        audio.addEventListener('canplaythrough', () => {
+            audioHandles.slots[handle].ready = true;
+        });
+        audio.addEventListener('timeupdate', () => {
+            audioHandles.slots[handle].time = audio.currentTime * 1000;
+        });
+        return handle;
     },
-    $audioLib__postset: 'audioLib();',
 
-    jsAudioOpen: function() {},
-    jsAudioOpen__deps: ['$audioLib'],
-
-    jsAudioReady: function() {},
-    jsAudioReady__deps: ['$audioLib'],
-
-    jsAudioClose: function() {},
-    jsAudioClose__deps: ['$audioLib'],
-
-    jsAudioPlay: function() {},
-    jsAudioPlay__deps: ['$audioLib'],
-
-    jsAudioTell: function() {},
-    jsAudioTell__deps: ['$audioLib'],
-
-    jsAudioStat: function() {},
-    jsAudioStat__deps: ['$audioLib'],
-
-    $requestLib: function() {
-        const handles = new ResourceManager();
-
-        _jsReqOpen = function(ptr) {
-            const filename = UTF8ToString(ptr);
-            const obj = { ready: false };
-            const handle = handles.open(obj);
-            fetch(filename)
-                .then(res => res.arrayBuffer())
-                .then(buf => obj.value = buf)
-                .catch(e => console.error(e))
-                .finally(() => obj.ready = true);
-            return handle;
-        };
-    
-        _jsReqReady = function(handle) {
-            return handles.slots[handle].ready;
-        };
-    
-        _jsReqError = function(handle) {
-            return !handles.slots[handle].value;
-        };
-    
-        _jsReqClose = handles.close.bind(handles);
-    
-        _jsReqStat = function(handle) {
-            return handles.slots[handle].value.byteLength;
-        };
-    
-        _jsReqRead = function(handle, dst) {
-            const src = new Uint8Array(handles.slots[handle].value);
-            Module['HEAPU8'].set(src, dst);
-        };
+    jsAudioReady: function(handle) {
+        return audioHandles.slots[handle].ready;
     },
-    $requestLib__postset: 'requestLib();',
 
-    jsReqOpen: function() {},
-    jsReqOpen__deps: ['$requestLib'],
+    jsAudioClose: function(handle) {
+        audioHandles.slots[handle].track.mediaElement.pause();
+        audioHandles.slots[handle].track.disconnect();
+        audioHandles.close(handle);
+    },
 
-    jsReqReady: function() {},
-    jsReqReady__deps: ['$requestLib'],
+    jsAudioPlay: function(handle) {
+        audioHandles.slots[handle].track.mediaElement.play();
+    },
 
-    jsReqError: function() {},
-    jsReqError__deps: ['$requestLib'],
+    jsAudioTell: function(handle) {
+        return audioHandles.slots[handle].time;
+    },
 
-    jsReqClose: function() {},
-    jsReqClose__deps: ['$requestLib'],
+    jsAudioStat: function(handle) {
+        const d = audioHandles.slots[handle].track.mediaElement.duration;
+        // if the media is streaming, duration is Infinity
+        if (d === Infinity) return -1;
+        return d * 1000;
+    },
 
-    jsReqStat: function() {},
-    jsReqStat__deps: ['$requestLib'],
+    jsReqOpen: function(ptr) {
+        const filename = UTF8ToString(ptr);
+        const obj = { ready: false };
+        const handle = requestHandles.open(obj);
+        fetch(filename)
+            .then(res => res.arrayBuffer())
+            .then(buf => obj.value = buf)
+            .catch(e => console.error(e))
+            .finally(() => obj.ready = true);
+        return handle;
+    },
 
-    jsReqRead: function() {},
-    jsReqRead__deps: ['$requestLib'],
+    jsReqReady: function(handle) {
+        return requestHandles.slots[handle].ready;
+    },
+
+    jsReqError: function(handle) {
+        return !requestHandles.slots[handle].value;
+    },
+
+    jsReqClose: function(handle) {
+        requestHandles.close(handle);
+    },
+
+    jsReqStat: function(handle) {
+        return requestHandles.slots[handle].value.byteLength;
+    },
+
+    jsReqRead: function(handle, dst) {
+        const src = new Uint8Array(requestHandles.slots[handle].value);
+        Module['HEAPU8'].set(src, dst);
+    },
 
     jsParseFloat: function(ptr, len) {
         return +UTF8ToString(ptr, len);
