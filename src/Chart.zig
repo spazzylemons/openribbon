@@ -56,6 +56,8 @@ pub fn load(filename: [:0]const u8) !Chart {
     defer chart.deinit();
 
     const bpm = try chart.getAttr("bpm", .Float);
+    if (bpm <= 0) return error.InvalidChart;
+
     var obstacles = std.ArrayList(Obstacle).init(util.allocator);
     defer obstacles.deinit();
 
