@@ -21,7 +21,7 @@ play_cursor: usize = 0,
 /// Set to false when the music starts
 in_countdown: bool = true,
 /// Last game timestamp seen by this chart
-last_time: u64 = 0,
+last_time: u64,
 /// Current position in song
 song_pos: i64,
 /// Last song timestamp seen by this chart
@@ -43,6 +43,7 @@ pub fn init(chart: *const Chart, track_filename: [*:0]const u8) !ActiveChart {
     return ActiveChart{
         .chart = chart,
         .audio = audio,
+        .last_time = window.getTicks(),
         .song_pos = -countdown_length,
         .last_timestamp = -countdown_length,
         .max_prediction = countdown_length,
@@ -90,11 +91,7 @@ fn setSongPos(self: *ActiveChart, pos: i64) void {
     if (pos > self.song_pos) self.song_pos = pos;
 }
 
-fn predictPos(self: *ActiveChart) void {
-    // find out time elapsed this frame
-    const new = window.getTicks();
-    const diff = new - self.last_time;
-    self.last_time = new;
+fn predictPos(self: *ActiveChart, diff: u64) void {
     // don't set song pos further than max predicted timestamp
     const new_pos = self.song_pos + @intCast(i64, diff);
     const max_pos = self.last_timestamp + self.max_prediction;
@@ -103,8 +100,12 @@ fn predictPos(self: *ActiveChart) void {
 
 /// Update the current song position to be in sync with the playing audio.
 fn updatePos(self: *ActiveChart) !void {
+    // find out time elapsed this frame
+    const new = window.getTicks();
+    const diff = new - self.last_time;
+    self.last_time = new;
     if (self.in_countdown) {
-        self.predictPos();
+        self.predictPos(diff);
         if (self.song_pos >= 0) {
             try self.audio.play();
             self.in_countdown = false;
@@ -118,7 +119,7 @@ fn updatePos(self: *ActiveChart) !void {
             self.last_timestamp = pos;
             self.setSongPos(pos);
         } else {
-            self.predictPos();
+            self.predictPos(diff);
         }
     }
 }
