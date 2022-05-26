@@ -1,5 +1,4 @@
 const music = @import("../music.zig");
-const platform = @import("../platform.zig");
 const renderer = @import("../renderer.zig");
 const SDL = @import("sdl2");
 const std = @import("std");

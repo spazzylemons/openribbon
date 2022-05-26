@@ -1,7 +1,5 @@
-const Chart = @import("Chart.zig");
 const renderer = @import("renderer.zig");
 const std = @import("std");
-const util = @import("util.zig");
 const zlm = @import("zlm");
 
 const ObstacleModel = struct {

@@ -1,6 +1,5 @@
 const builtin = @import("builtin");
 const platform = @import("platform.zig");
-const std = @import("std");
 
 pub const is_wasm = builtin.target.isWasm();
 

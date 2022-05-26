@@ -1,4 +1,3 @@
-const platform = @import("../platform.zig");
 const std = @import("std");
 const util = @import("../util.zig");
 const window = @import("../window.zig");
