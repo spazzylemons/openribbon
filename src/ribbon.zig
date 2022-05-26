@@ -10,7 +10,7 @@ const ObstacleModel = struct {
     end_x: f32,
 
     fn loadCommon(model: renderer.Model) !ObstacleModel {
-        errdefer model.deinit(util.allocator);
+        errdefer model.deinit();
         // dynamically calculate endpoints
         var start_x = std.math.inf_f32;
         var end_x = -std.math.inf_f32;
@@ -33,11 +33,11 @@ const ObstacleModel = struct {
     }
 
     fn load(comptime src: []const u8) !ObstacleModel {
-        return loadCommon(try renderer.Model.loadEmbedded(util.allocator, src));
+        return loadCommon(try renderer.Model.loadEmbedded(src));
     }
 
     fn deinit(self: ObstacleModel) void {
-        self.model.deinit(util.allocator);
+        self.model.deinit();
     }
 };
 
@@ -58,8 +58,8 @@ pub fn init() !void {
     errdefer loop_model.deinit();
     wave_model = try ObstacleModel.load("ribbon/w.bin");
     errdefer wave_model.deinit();
-    marker_model = try renderer.Model.loadEmbedded(util.allocator, "ribbon/marker.bin");
-    errdefer marker_model.deinit(util.allocator);
+    marker_model = try renderer.Model.loadEmbedded("ribbon/marker.bin");
+    errdefer marker_model.deinit();
 }
 
 pub fn deinit() void {
@@ -67,7 +67,7 @@ pub fn deinit() void {
     pit_model.deinit();
     loop_model.deinit();
     wave_model.deinit();
-    marker_model.deinit(util.allocator);
+    marker_model.deinit();
 }
 
 pub const ObstacleType = enum { Block, Pit, Loop, Wave };

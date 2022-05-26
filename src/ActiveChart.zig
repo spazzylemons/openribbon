@@ -1,9 +1,12 @@
 const Chart = @import("Chart.zig");
+const font = @import("font.zig");
 const music = @import("music.zig");
+const renderer = @import("renderer.zig");
 const ribbon = @import("ribbon.zig");
 const std = @import("std");
 const util = @import("util.zig");
 const window = @import("window.zig");
+const zlm = @import("zlm");
 
 const ActiveChart = @This();
 
@@ -28,6 +31,8 @@ last_timestamp: i64,
 max_prediction: i64,
 /// last time a key was pressed, for input cooldown preventing spamming keys
 last_input_time: ?u32 = null,
+/// points earned
+score: u32 = 0,
 
 pub fn init(chart: *const Chart, track_filename: [*:0]const u8) !ActiveChart {
     const audio = try music.Audio.init(track_filename);
@@ -138,7 +143,7 @@ pub fn handleKeyPress(self: *ActiveChart, key: window.PressedKey) void {
     if (self.currentObstacle()) |ob| {
         // check if correct key and within leniance
         if (ob.key() == key.id and ob.minTime() <= press_time and press_time <= ob.maxTime()) {
-            std.log.info("hit", .{});
+            self.score += 1;
             self.play_cursor += 1;
         }
     }
@@ -150,10 +155,13 @@ pub fn update(self: *ActiveChart) !void {
     while (self.currentObstacle()) |ob| {
         // check if we've passed the obstacle
         if (self.song_pos > ob.maxTime()) {
-            std.log.info("miss", .{});
             self.play_cursor += 1;
         } else {
-            return;
+            break;
         }
     }
+    renderer.reseed();
+    renderer.setColor(zlm.vec3(1, 1, 1));
+    renderer.setWobble(0.05);
+    font.print("SCORE: {}", .{self.score}, zlm.vec3(-12, 6, 0));
 }

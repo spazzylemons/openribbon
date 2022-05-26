@@ -199,9 +199,9 @@ pub const Model = struct {
     }
 
     /// Load a model from a reader. Checks if the model is valid while loading.
-    pub fn load(allocator: std.mem.Allocator, reader: anytype) !Model {
-        var vertices = try allocator.alloc(zlm.Vec3, try reader.readByte());
-        defer allocator.free(vertices);
+    pub fn load(reader: anytype) !Model {
+        var vertices = try util.allocator.alloc(zlm.Vec3, try reader.readByte());
+        defer util.allocator.free(vertices);
 
         for (vertices) |*vertex| {
             vertex.x = try readFixedPoint(reader);
@@ -209,7 +209,7 @@ pub const Model = struct {
             vertex.z = try readFixedPoint(reader);
         }
 
-        var model_vertices = std.ArrayList(zlm.Vec3).init(allocator);
+        var model_vertices = std.ArrayList(zlm.Vec3).init(util.allocator);
         defer model_vertices.deinit();
 
         var group_count = try reader.readByte();
@@ -232,14 +232,14 @@ pub const Model = struct {
     }
 
     /// Load the model from an embedded file.
-    pub fn loadEmbedded(allocator: std.mem.Allocator, comptime src: []const u8) !Model {
+    pub fn loadEmbedded(comptime src: []const u8) !Model {
         var stream = std.io.fixedBufferStream(@embedFile("assets/" ++ src));
-        return load(allocator, stream.reader());
+        return load(stream.reader());
     }
 
     /// Free the model's vertices.
-    pub fn deinit(self: Model, allocator: std.mem.Allocator) void {
-        allocator.free(self.vertices);
+    pub fn deinit(self: Model) void {
+        util.allocator.free(self.vertices);
     }
 
     pub fn render(self: Model, offset: zlm.Vec3, rotation: zlm.Vec3) void {

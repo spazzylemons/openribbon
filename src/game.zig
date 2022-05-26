@@ -1,5 +1,6 @@
 const ActiveChart = @import("ActiveChart.zig");
 const Chart = @import("Chart.zig");
+const font = @import("font.zig");
 const ribbon = @import("ribbon.zig");
 const renderer = @import("renderer.zig");
 const util = @import("util.zig");
@@ -21,6 +22,9 @@ pub fn init() !void {
     // ribbon
     try ribbon.init();
     errdefer ribbon.deinit();
+    // font
+    try font.init();
+    errdefer font.deinit();
     // read track data
     chart = try Chart.load("music/fresh.oron");
     errdefer chart.deinit();
@@ -30,6 +34,7 @@ pub fn init() !void {
 pub fn deinit() void {
     if (active) |a| a.deinit();
     chart.deinit();
+    font.deinit();
     ribbon.deinit();
     renderer.deinit();
     window.deinit();

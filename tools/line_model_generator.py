@@ -1,13 +1,14 @@
 bl_info = {
     'name': 'Line Model Generator',
     'author': 'spazzylemons',
-    'version': (1, 0, 0),
+    'version': (1, 1, 0),
     'blender': (3, 1, 2),
     'location': 'File > Import-Export',
     'description': 'Generate Line Model',
     'category': 'Import-Export',
 }
 
+import os
 from typing import Iterable
 import bpy
 
@@ -63,8 +64,8 @@ class Graph:
     def __len__(self) -> int:
         return len(self.pairs)
 
+# TODO optimal longest-path algorithm
 def find_line_groups(graph: Graph) -> list[list[int]]:
-    # TODO make this less greedy but keep efficiency
     groups = []
     while len(graph):
         pair = graph.pop()
@@ -86,6 +87,34 @@ def find_line_groups(graph: Graph) -> list[list[int]]:
         groups.append(order)
     return groups
 
+def generate_model(mesh, filename):
+    graph = Graph(len(mesh.vertices))
+    for edge in mesh.edges:
+        graph.add((edge.vertices[0], edge.vertices[1]))
+    groups = find_line_groups(graph)
+
+    with open(filename, 'wb') as file:
+        # vertices
+        file.write(pack('>B', len(mesh.vertices)))
+        for vertex in mesh.vertices:
+            file.write(pack('>hhh', *(round(v * 256) for v in conv_vector(vertex.co))))
+        # groups
+        file.write(pack('>B', len(groups)))
+        for group in groups:
+            file.write(pack('>B', len(group) - 2))
+            for i in group:
+                file.write(pack('>B', i))
+
+OPERATORS = []
+
+def operator(cls):
+    def operator_func(self, context):
+        self.layout.operator(cls.bl_idname)
+
+    cls.operator_func = operator_func
+    OPERATORS.append(cls)
+
+@operator
 class GenerateModel(bpy.types.Operator, ExportHelper):
     """Export the selected mesh"""
     bl_idname = 'line_model_generator.generate_model'
@@ -95,37 +124,39 @@ class GenerateModel(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         try:
-            mesh = bpy.data.meshes[context.active_object.data.name]
-
-            graph = Graph(len(mesh.vertices))
-            for edge in mesh.edges:
-                graph.add((edge.vertices[0], edge.vertices[1]))
-            groups = find_line_groups(graph)
-
-            with open(self.filepath, 'wb') as file:
-                # vertices
-                file.write(pack('>B', len(mesh.vertices)))
-                for vertex in mesh.vertices:
-                    file.write(pack('>hhh', *(round(v * 256) for v in conv_vector(vertex.co))))
-                # groups
-                file.write(pack('>B', len(groups)))
-                for group in groups:
-                    file.write(pack('>B', len(group) - 2))
-                    for i in group:
-                        file.write(pack('>B', i))
+            generate_model(bpy.data.meshes[context.active_object.data.name], self.filepath)
         except BaseException as e:
             self.report({'ERROR'}, repr(e))
             return {'CANCELLED'}
         else:
             return {'FINISHED'}
 
-def generate_func(self, context):
-    self.layout.operator(GenerateModel.bl_idname)
+@operator
+class BatchExport(bpy.types.Operator, ExportHelper):
+    """Export all selected meshes"""
+    bl_idname = 'line_model_generator.batch_export'
+    bl_label = 'Batch Export'
+
+    filename_ext = '.bin'
+
+    def execute(self, context):
+        try:
+            path = os.path.dirname(self.filepath)
+            for obj in context.selected_objects:
+                filename = path + os.path.sep + obj.name + '.bin'
+                generate_model(bpy.data.meshes[obj.data.name], filename)
+        except BaseException as e:
+            self.report({'ERROR'}, repr(e))
+            return {'CANCELLED'}
+        else:
+            return {'FINISHED'}
 
 def register():
-    bpy.utils.register_class(GenerateModel)
-    bpy.types.TOPBAR_MT_file_export.append(generate_func)
+    for cls in OPERATORS:
+        bpy.utils.register_class(cls)
+        bpy.types.TOPBAR_MT_file_export.append(cls.operator_func)
 
 def unregister():
-    bpy.types.TOPBAR_MT_file_export.remove(generate_func)
-    bpy.utils.unregister_class(GenerateModel)
+    for cls in OPERATORS:
+        bpy.types.TOPBAR_MT_file_export.remove(cls.operator_func)
+        bpy.utils.unregister_class(cls)
