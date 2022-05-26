@@ -6,7 +6,6 @@ const window = @import("../window.zig");
 extern fn jsInitWebGl(major: i32, minor: i32) i32;
 extern fn jsGetCanvasSize(width: *i32, height: *i32) void;
 extern fn jsSetCanvasSize(width: i32, height: i32) void;
-extern fn jsGetKeyDown(index: u32) i32;
 extern fn jsNextPressedKey(id_ptr: *u8, time_ptr: *u32) i32;
 extern fn jsGetTicks() u64;
 
@@ -79,10 +78,6 @@ pub const KeyCode = enum {
     wave,
     space,
 };
-
-pub fn isKeyDown(key: KeyCode) bool {
-    return jsGetKeyDown(@enumToInt(key)) != 0;
-}
 
 pub fn getTicks() u64 {
     return jsGetTicks();

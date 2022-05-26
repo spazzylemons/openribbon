@@ -30,17 +30,14 @@ pub const getResolution = platform.getWindowSize;
 /// Update the window.
 pub const update = platform.pollEvents;
 
-/// A code for a keyboard key.s
-pub const KeyCode = platform.KeyCode;
-
-/// Check if a key is pressed.
-pub const isKeyDown = platform.isKeyDown;
-
 /// Return true if the window has been requested to close.
 pub const shouldClose = platform.shouldClose;
 
 /// Get the number of ticks that have elapsed since the program began.
 pub const getTicks = platform.getTicks;
+
+/// A code for a keyboard key.s
+pub const KeyCode = platform.KeyCode;
 
 /// A key and its time of being pressed.
 pub const PressedKey = struct { id: platform.KeyCode, time: u32 };

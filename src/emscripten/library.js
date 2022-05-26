@@ -34,10 +34,6 @@ mergeInto(LibraryManager.library, {
         canvas.height = height;
     },
 
-    jsGetKeyDown: function(code) {
-        return code in keysDown;
-    },
-
     jsNextPressedKey: function(idPtr, timePtr) {
         if (!pressedQueue.length) return 0;
         const result = pressedQueue.shift();

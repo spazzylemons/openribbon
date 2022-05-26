@@ -41,9 +41,6 @@ const keyIds = {
     'Space': 4,
 };
 
-// Set of all currently pressed keys.
-const keysDown = {};
-
 // Queue of pressed keys and when they were pressed.
 const pressedQueue = [];
 
@@ -51,16 +48,7 @@ const pressedQueue = [];
 document.addEventListener('keydown', e => {
     const code = keyIds[e.code];
     if (code == undefined) return;
-    keysDown[code] = 0;
     pressedQueue.push({ id: code, time: e.timeStamp - eventEpoch });
-    e.preventDefault();
-});
-
-// listen for when keys are released
-document.addEventListener('keyup', e => {
-    const code = keyIds[e.code];
-    if (code == undefined) return;
-    delete keysDown[code];
     e.preventDefault();
 });
 

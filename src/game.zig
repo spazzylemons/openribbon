@@ -45,16 +45,17 @@ pub fn deinit() void {
 pub fn loop() !void {
     // process key events
     while (window.nextPressedKey()) |key| {
-        if (active) |*a| a.handleKeyPress(key);
+        if (active) |*a| {
+            a.handleKeyPress(key);
+        } else if (key.id == .space) {
+            active = try ActiveChart.init(&chart, "music/fresh.mp3");
+        }
     }
     // clear the screen
     renderer.clear();
     // set up camera
     renderer.setCamera(zlm.vec3(0, 0, -16), zlm.vec3(0, 0, 0));
-    // draw some obstacles
-    if (window.isKeyDown(.space) and active == null) {
-        active = try ActiveChart.init(&chart, "music/fresh.mp3");
-    }
+    // run chart
     if (active) |*a| {
         if (a.song_pos >= (try a.audio.getDuration())) {
             // audio is finished, stop playing it

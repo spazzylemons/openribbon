@@ -186,10 +186,6 @@ pub const KeyCode = enum(c_int) {
     space = SDL.c.SDL_SCANCODE_SPACE,
 };
 
-pub fn isKeyDown(key: KeyCode) bool {
-    return SDL.getKeyboardState().isPressed(@intToEnum(SDL.Scancode, @enumToInt(key)));
-}
-
 pub fn getTicks() u64 {
     return SDL.getTicks64();
 }
