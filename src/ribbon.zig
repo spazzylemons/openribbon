@@ -79,7 +79,6 @@ fn renderLine(from: f32, to: f32) void {
     renderer.drawLines(
         &.{ zlm.vec3(from, 0, 0), zlm.vec3(to, 0, 0) },
         zlm.Vec3.zero,
-        zlm.Vec3.zero,
     );
 }
 
@@ -110,10 +109,10 @@ pub fn render(obstacles: []const Obstacle) void {
         // set next line location
         last_pos = obstacle.pos + model.end_x;
         // draw the obstacle itself
-        model.model.render(zlm.vec3(obstacle.pos, 0, 0), zlm.Vec3.zero);
+        model.model.render(zlm.vec3(obstacle.pos, 0, 0));
     }
     // finish drawing line
     renderLine(last_pos, RIBBON_RADIUS);
     // draw the marker
-    marker_model.render(zlm.vec3(PLAYER_POS, 0, 0), zlm.Vec3.zero);
+    marker_model.render(zlm.vec3(PLAYER_POS, 0, 0));
 }

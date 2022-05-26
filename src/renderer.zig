@@ -157,15 +157,14 @@ pub fn reseed() void {
     c.glUniform1f(params.seed, rng.random().float(f32));
 }
 
-pub fn drawLines(vertices: []const zlm.Vec3, offset: zlm.Vec3, rotation: zlm.Vec3) void {
+pub fn drawLines(vertices: []const zlm.Vec3, offset: zlm.Vec3) void {
     // rotation matrices
-    const rot_x = zlm.Mat4.createAngleAxis(zlm.Vec3.unitX, rotation.x);
-    const rot_y = zlm.Mat4.createAngleAxis(zlm.Vec3.unitY, rotation.y);
-    const rot_z = zlm.Mat4.createAngleAxis(zlm.Vec3.unitZ, rotation.z);
-    // translation matrix
-    const offset_matrix = zlm.Mat4.createTranslation(offset);
+    // const rot_x = zlm.Mat4.createAngleAxis(zlm.Vec3.unitX, rotation.x);
+    // const rot_y = zlm.Mat4.createAngleAxis(zlm.Vec3.unitY, rotation.y);
+    // const rot_z = zlm.Mat4.createAngleAxis(zlm.Vec3.unitZ, rotation.z);
+    // rot_x.mul(rot_y).mul(rot_z);
     // model matrix
-    const model = rot_x.mul(rot_y).mul(rot_z).mul(offset_matrix);
+    const model = zlm.Mat4.createTranslation(offset);
     // send model matrix to gpu
     uniformMat4(params.model, model);
     // send vertices to gpu
@@ -242,7 +241,7 @@ pub const Model = struct {
         util.allocator.free(self.vertices);
     }
 
-    pub fn render(self: Model, offset: zlm.Vec3, rotation: zlm.Vec3) void {
-        drawLines(self.vertices, offset, rotation);
+    pub fn render(self: Model, offset: zlm.Vec3) void {
+        drawLines(self.vertices, offset);
     }
 };

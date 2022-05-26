@@ -49,7 +49,7 @@ const WriterContext = struct {
     fn write(self: *WriterContext, buf: []const u8) Error!usize {
         for (buf) |c| {
             if (glyphs[c]) |glyph| {
-                glyph.render(self.location, zlm.Vec3.zero);
+                glyph.render(self.location);
             }
             self.location.x += 0.75;
         }
