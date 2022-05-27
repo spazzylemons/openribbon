@@ -2,34 +2,33 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>rhythm</title>
+        <title>openribbon web demo</title>
         <style>
-            :root {
-                --error-dark: #400;
-                --error-light: #fbb;
-            }
 
             body {
-                font-family: sans-serif;
-                background-color: #004;
+                font-family: monospace;
+                background-color: black;
                 color: white;
                 text-align: center;
             }
 
             .error-box {
-                color: var(--error-dark);
-                background-color: var(--error-light);
-                border: 1px solid var(--error-dark);
+                color: black;
+                background-color: red;
+                font-weight: bold;
                 padding: 1em;
             }
 
-            .container {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                margin: auto;
+            td {
+                padding: 0.5em;
+            }
+
+            .outline {
+                border: 1px solid white;
+            }
+
+            .spacing {
+                min-width: 1em;
             }
         </style>
     </head>
@@ -44,22 +43,64 @@
         <div id="runtime-error" class="error-box" hidden>
             <span id="error-message"></span>
         </div>
-        <!-- canvas to render to -->
-        <div id="container">
-            <canvas id="canvas"></canvas>
-        </div>
+        <!-- <center> works more reliably than css -->
+        <center>
+            <h1>openribbon web demo</h1>
+            <!-- canvas to render to -->
+            <canvas id="canvas" width="640" height="360" class="outline"></canvas>
+            <!-- shows how to play -->
+            <div>
+                <h3>how to play</h3>
+                <table>
+                    <tr>
+                        <td>block</td>
+                        <td class="outline">a</td>
+                        <td class="spacing"></td>
+                        <td></td>
+                        <td class="spacing"></td>
+                        <td class="outline">'</td>
+                        <td>loop&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;&nbsp;pit</td>
+                        <td class="outline">z</td>
+                        <td class="spacing"></td>
+                        <td></td>
+                        <td class="spacing"></td>
+                        <td class="outline">/</td>
+                        <td>wave&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td class="spacing"></td>
+                        <td class="outline">&nbsp;&nbsp;space&nbsp;&nbsp;</td>
+                        <td class="spacing"></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td class="spacing"></td>
+                        <td>start</td>
+                        <td class="spacing"></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+        </center>
         <!-- emscripten setup -->
         <script type="text/javascript">
             // set up runtime errors to display in the error box
-            window.addEventListener('error', function(e) {
-                document.getElementById('error-message').textContent = e.error.toString();
+            window.onerror = function(msg) {
+                document.getElementById('error-message').textContent = msg;
                 document.getElementById('runtime-error').hidden = false;
                 return false;
-            });
-            // get the canvas
-            var canvas = document.getElementById('canvas');
+            };
             // set up module with proper canvas
-            var Module = { canvas: canvas };
+            var Module = { canvas: document.getElementById('canvas') };
         </script>
         {{{ SCRIPT }}}
     </body>

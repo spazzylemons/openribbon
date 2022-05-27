@@ -11,15 +11,21 @@ mergeInto(LibraryManager.library, {
     },
 
     jsInitWebGl: function(major, minor) {
+        // access the canvas
         const canvas = Module['canvas'];
-        const webgl = canvas.getContext('webgl', { antialias: false });
-        if (!webgl) return -1;
-        const ctx = GL.createContext(canvas, {
-            majorVersion: major,
-            minorVersion: minor,
-        });
-        GL.makeContextCurrent(ctx);
-        return 0;
+        // create an Emscripten GL context, make sure it was created
+        try {
+            const ctx = Browser.createContext(canvas, true, true, {
+                majorVersion: major,
+                minorVersion: minor,
+                antialias: false,
+            });
+            if (!ctx) return -1;
+            return 0;
+        } catch (e) {
+            console.error(e);
+            return -1;
+        }
     },
 
     jsGetCanvasSize: function(width, height) {
@@ -52,12 +58,10 @@ mergeInto(LibraryManager.library, {
         track.connect(audioCtx.destination);
         const handle = audioHandles.open({ ready: false, track, time: 0 });
         audio.load();
-        audio.addEventListener('canplaythrough', () => {
-            audioHandles.slots[handle].ready = true;
-        });
-        audio.addEventListener('timeupdate', () => {
-            audioHandles.slots[handle].time = audio.currentTime * 1000;
-        });
+        audio.addEventListener('canplaythrough', () =>
+            audioHandles.slots[handle].ready = true);
+        audio.addEventListener('timeupdate', () =>
+            audioHandles.slots[handle].time = audio.currentTime * 1000);
         return handle;
     },
 
@@ -72,6 +76,7 @@ mergeInto(LibraryManager.library, {
     },
 
     jsAudioPlay: function(handle) {
+        // TODO possible error handling for playback failure?
         audioHandles.slots[handle].track.mediaElement.play();
     },
 

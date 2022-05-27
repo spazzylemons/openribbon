@@ -56,5 +56,8 @@ document.addEventListener('keydown', e => {
 const audioHandles = resourceManager();
 // handles for resource requests
 const requestHandles = resourceManager();
+// audio context constructor, if available
+const MyAudioContext = window.AudioContext || window.webkitAudioContext;
+if (!MyAudioContext) throw 'AudioContext API is not supported by your browser';
 // audio context for playing audio
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const audioCtx = new MyAudioContext();
