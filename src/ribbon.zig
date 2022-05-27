@@ -88,12 +88,6 @@ pub const PLAYER_POS = -6.0;
 
 /// Render obstacles. Must be in sorted order from left to right.
 pub fn render(obstacles: []const Obstacle) void {
-    // set seed for entire obstacle group
-    renderer.reseed();
-    // set color for ribbon
-    renderer.setColor(zlm.vec3(1, 1, 1));
-    // set wobble for ribbon
-    renderer.setWobble(WOBBLE);
     // draw each obstacle
     var last_pos: f32 = -RIBBON_RADIUS;
     for (obstacles) |obstacle| {

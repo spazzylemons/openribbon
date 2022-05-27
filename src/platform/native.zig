@@ -1,4 +1,4 @@
-const music = @import("../music.zig");
+const Audio = @import("../Audio.zig");
 const renderer = @import("../renderer.zig");
 const SDL = @import("sdl2");
 const std = @import("std");
@@ -82,9 +82,9 @@ pub fn initIo() !void {
     errdefer playing_tracks.deinit();
 
     var desired = std.mem.zeroes(SDL.c.SDL_AudioSpec);
-    desired.freq = music.SAMPLE_RATE;
+    desired.freq = Audio.SAMPLE_RATE;
     desired.format = SDL.c.AUDIO_S16SYS;
-    desired.channels = music.CHANNEL_COUNT;
+    desired.channels = Audio.CHANNEL_COUNT;
     desired.samples = 512;
     desired.callback = audioCallback;
     var obtained: SDL.c.SDL_AudioSpec = undefined;
@@ -242,12 +242,12 @@ pub fn openAudio(src: [*:0]const u8) !AudioHandle {
     };
     errdefer _ = c.mpg123_delete(handle);
     // force sample rate
-    err = c.mpg123_param2(handle, c.MPG123_FORCE_RATE, music.SAMPLE_RATE, undefined);
+    err = c.mpg123_param2(handle, c.MPG123_FORCE_RATE, Audio.SAMPLE_RATE, undefined);
     if (err != c.MPG123_OK) {
         return makeMpegError(err);
     }
     // open file, with settings matching SDL audio device
-    err = c.mpg123_open_fixed(handle, src, music.CHANNEL_COUNT, c.MPG123_ENC_SIGNED_16);
+    err = c.mpg123_open_fixed(handle, src, Audio.CHANNEL_COUNT, c.MPG123_ENC_SIGNED_16);
     if (err != c.MPG123_OK) {
         return makeMpegError(err);
     }
@@ -272,7 +272,7 @@ pub fn playAudio(handle: AudioHandle) !void {
 }
 
 fn samplesToMillis(samples: c.off_t) u64 {
-    return (@intCast(u64, samples) * 1000) / music.SAMPLE_RATE;
+    return (@intCast(u64, samples) * 1000) / Audio.SAMPLE_RATE;
 }
 
 pub fn getAudioPos(handle: AudioHandle) u64 {

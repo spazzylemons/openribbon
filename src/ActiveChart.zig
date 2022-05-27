@@ -1,6 +1,6 @@
+const Audio = @import("Audio.zig");
 const Chart = @import("Chart.zig");
 const font = @import("font.zig");
-const music = @import("music.zig");
 const renderer = @import("renderer.zig");
 const ribbon = @import("ribbon.zig");
 const std = @import("std");
@@ -13,7 +13,7 @@ const ActiveChart = @This();
 /// chart to reference for timings
 chart: *const Chart,
 /// Track playing audio
-audio: music.Audio,
+audio: Audio,
 /// Index into obstacles to start at when drawing
 draw_cursor: usize = 0,
 /// Index into obstacles for checking inputs
@@ -35,7 +35,7 @@ last_input_time: ?u32 = null,
 score: u32 = 0,
 
 pub fn init(chart: *const Chart, track_filename: [*:0]const u8) !ActiveChart {
-    const audio = try music.Audio.init(track_filename);
+    const audio = try Audio.init(track_filename);
     errdefer audio.deinit();
 
     const countdown_length = @floatToInt(i64, 240000 / chart.bpm);
@@ -83,7 +83,9 @@ pub fn render(self: *ActiveChart) !void {
         offset += 1;
     }
 
+    renderer.setColor(zlm.vec3(1, 1, 1));
     ribbon.render(list.items);
+    font.print("SCORE {}", .{self.score}, zlm.vec3(-12, 6, 0));
 }
 
 fn setSongPos(self: *ActiveChart, pos: i64) void {
@@ -161,8 +163,4 @@ pub fn update(self: *ActiveChart) !void {
             break;
         }
     }
-    renderer.reseed();
-    renderer.setColor(zlm.vec3(1, 1, 1));
-    renderer.setWobble(0.05);
-    font.print("SCORE: {}", .{self.score}, zlm.vec3(-12, 6, 0));
 }

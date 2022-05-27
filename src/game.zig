@@ -10,35 +10,45 @@ const zlm = @import("zlm");
 var chart: Chart = undefined;
 var active: ?ActiveChart = null;
 
+const COMPONENTS = [_]type{ util, window, renderer, ribbon, font };
+
+fn initComponents(comptime components: []const type) !void {
+    if (components.len > 0) {
+        const c = components[0];
+        // try to initialize, if needed
+        if (@hasDecl(c, "init")) {
+            try c.init();
+        }
+        // initialize the next components, and deinitialize the current on failure
+        initComponents(components[1..]) catch |err| {
+            c.deinit();
+            return err;
+        };
+    }
+}
+
+fn deinitComponents(comptime components: []const type) void {
+    if (components.len > 0) {
+        components[components.len - 1].deinit();
+        deinitComponents(components[0 .. components.len - 1]);
+    }
+}
+
 /// Initialize the game.
 pub fn init() !void {
-    errdefer util.deinit();
-    // window context
-    try window.init();
-    errdefer window.deinit();
-    // rendering context
-    try renderer.init();
-    errdefer renderer.deinit();
-    // ribbon
-    try ribbon.init();
-    errdefer ribbon.deinit();
-    // font
-    try font.init();
-    errdefer font.deinit();
+    try initComponents(&COMPONENTS);
     // read track data
     chart = try Chart.load("music/fresh.oron");
     errdefer chart.deinit();
+    // set up the camera
+    renderer.setCamera(zlm.vec3(0, 0, -16), zlm.vec3(0, 0, 0));
 }
 
 /// Free resources allocated by the game.
 pub fn deinit() void {
     if (active) |a| a.deinit();
     chart.deinit();
-    font.deinit();
-    ribbon.deinit();
-    renderer.deinit();
-    window.deinit();
-    util.deinit();
+    deinitComponents(&COMPONENTS);
 }
 
 /// Run the game loop for one render frame.
@@ -51,10 +61,7 @@ pub fn loop() !void {
             active = try ActiveChart.init(&chart, "music/fresh.mp3");
         }
     }
-    // clear the screen
-    renderer.clear();
-    // set up camera
-    renderer.setCamera(zlm.vec3(0, 0, -16), zlm.vec3(0, 0, 0));
+    renderer.begin(0.05);
     // run chart
     if (active) |*a| {
         if (a.song_pos >= (try a.audio.getDuration())) {

@@ -140,21 +140,19 @@ pub fn updateResolution() void {
     uniformMat4(params.projection, projection);
 }
 
-/// Clear the screen.
-pub fn clear() void {
+/// Clear the screen and prepare to draw the net frame.
+pub fn begin(vibration: f32) void {
     c.glClearColor(0.0, 0.0, 0.0, 1.0);
     c.glClear(c.GL_COLOR_BUFFER_BIT | c.GL_DEPTH_BUFFER_BIT);
+    // reseed vibration
+    c.glUniform1f(params.seed, rng.random().float(f32));
+    c.glUniform1f(params.scale, vibration);
 }
 
 /// Set the camera's position and target.
 pub fn setCamera(position: zlm.Vec3, target: zlm.Vec3) void {
     const view = zlm.Mat4.createLookAt(position, target, zlm.Vec3.unitY);
     uniformMat4(params.view, view);
-}
-
-/// Reseed the wobble parameter.
-pub fn reseed() void {
-    c.glUniform1f(params.seed, rng.random().float(f32));
 }
 
 pub fn drawLines(vertices: []const zlm.Vec3, offset: zlm.Vec3) void {
@@ -182,11 +180,6 @@ pub fn setColor(color: zlm.Vec3) void {
     c.glUniform3f(params.color, color.x, color.y, color.z);
 }
 
-/// Set the drawing wobble.
-pub fn setWobble(wobble: f32) void {
-    c.glUniform1f(params.scale, wobble);
-}
-
 /// A 3D model.
 pub const Model = struct {
     /// The vertices in the model.
@@ -209,7 +202,7 @@ pub const Model = struct {
         }
 
         var model_vertices = std.ArrayList(zlm.Vec3).init(util.allocator);
-        defer model_vertices.deinit();
+        errdefer model_vertices.deinit();
 
         var group_count = try reader.readByte();
         while (group_count > 0) : (group_count -= 1) {

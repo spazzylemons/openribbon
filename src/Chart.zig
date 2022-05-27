@@ -59,7 +59,7 @@ pub fn load(filename: [:0]const u8) !Chart {
     if (bpm <= 0) return error.InvalidChart;
 
     var obstacles = std.ArrayList(Obstacle).init(util.allocator);
-    defer obstacles.deinit();
+    errdefer obstacles.deinit();
 
     var min_time: i64 = -1;
 
