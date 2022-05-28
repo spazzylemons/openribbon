@@ -14,9 +14,9 @@ pub fn build(b: *std.build.Builder) !void {
     const is_wasm = target.getCpuArch().isWasm();
 
     const exe = if (is_wasm)
-        b.addObject("rhythm", "src/main.zig")
+        b.addObject("openribbon", "src/main.zig")
     else
-        b.addExecutable("rhythm", "src/main.zig");
+        b.addExecutable("openribbon", "src/main.zig");
     // set target and build mode
     exe.setTarget(target);
     exe.setBuildMode(mode);

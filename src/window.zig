@@ -4,7 +4,7 @@ const platform = @import("platform.zig");
 
 pub const WIDTH = 640;
 pub const HEIGHT = 360;
-pub const TITLE = "rhythm";
+pub const TITLE = "openribbon";
 
 /// Initialize the window.
 pub fn init() !void {
